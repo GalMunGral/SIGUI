@@ -1,0 +1,225 @@
+<style>
+  body {
+    width: min(50vw, 600px);
+    margin: 50px auto;
+  }
+  canvas {
+    width: min(50vw, 600px);
+    height: 300px;
+    border: 1px solid black;
+  }
+</style>
+
+<h1>Structure and Interpretation of User Interfaces</h1>
+
+<h2>I. Raster and Pixels</h2>
+<p></p>
+
+<pre>
+function putPixel(image, x, y, color) {
+  const { data, width } = image;
+  const [r, g, b, a] = round(scale(color, 255));
+  data[(y * width + x) * 4] = r;
+  data[(y * width + x) * 4 + 1] = g;
+  data[(y * width + x) * 4 + 2] = b;
+  data[(y * width + x) * 4 + 3] = a;
+}
+</pre>
+<div>
+  <canvas id="pixel"></canvas>
+</div>
+<div>
+  <button id="clear-pixel">clear</button>
+</div>
+<script type="module" src="pixel.js"></script>
+
+<h2>II. Rasterization of Polygons</h2>
+<pre>
+function fillPolygon(image, vertices, color) {
+  const edges = [];
+
+  for (const i of vertices.keys()) {
+    let [x1, y1] = vertices[i];
+    let [x2, y2] = vertices[(i + 1) % vertices.length];
+    if (y1 == y2) continue;
+    if (y1 > y2) [x1, x2, y1, y2] = [x2, x1, y2, y1];
+    // [min-y, max-y, min-x, dx/dy]
+    edges.push([y1, y2, x1, (x2 - x1) / (y2 - y1)]);
+  }
+
+  if (!edges.length) return;
+
+  // sort primarily by min-y, secondarily by min-x
+  edges.sort((e1, e2) => (e1[0] == e2[0] ? e1[2] - e2[2] : e1[0] - e2[0]));
+
+  // scan-line fill
+  let y = Math.ceil(edges[0][0]) - 1;
+  let active = [];
+
+  do {
+    for (let i = 0; i < active.length; i += 2) {
+      for (let x = Math.ceil(active[i][1]); x < active[i + 1][1]; ++x) {
+        putPixel(image, x, y, color(x, y));
+      }
+    }
+
+    ++y;
+    active = active.filter(([minY]) => minY > y);
+    for (const edge of active) {
+      edge[1] += edge[2];
+    }
+    while (edges.length && edges[0][0] <= y) {
+      const [minY, maxY, minX, k] = edges.shift();
+      // [max-y, intersection-x, k]
+      active.push([maxY, minX + k * (y - minY), k]);
+    }
+    // sort by intersection-x
+    active.sort((e1, e2) => e1[1] - e2[1]);
+  } while (active.length || edges.length);
+}  
+</pre>
+<div>
+  <canvas id="polygon"></canvas>
+</div>
+<div>
+  <button id="clear-polygon">clear</button>
+</div>
+<script type="module" src="polygon.js"></script>
+
+<h2>III. Interpolation and Color Gradient</h2>
+<pre>
+function interpolate(value1, value2, t) {
+  return add(scale(value1, 1 - t), scale(value2, t));
+}
+</pre>
+<h3>Linear Gradient</h3>
+<pre>
+function linearGradient(y, minY, maxY, color1, color2) {
+  return interpolate(color1, color2, (y - minY) / (maxY - minY));
+}
+</pre>
+<div>
+  <canvas id="linear-gradient"></canvas>
+</div>
+<div>
+  <input id="linear-gradient-color-1" type="color" />
+  <input id="linear-gradient-color-2" type="color" />
+  <button id="clear-linear-gradient">clear</button>
+</div>
+<h3>Radial Gradient</h3>
+<pre>
+function radialGradient(p, center, maxRadius, color1, color2) {
+  return interpolate(color1, color2, dist(p, center) / maxRadius);
+}
+</pre>
+<div>
+  <canvas id="radial-gradient"></canvas>
+</div>
+<div>
+  <input id="radial-gradient-color-1" type="color" />
+  <input id="radial-gradient-color-2" type="color" />
+  <button id="clear-radial-gradient">clear</button>
+</div>
+<script type="module" src="gradient.js"></script>
+
+<h2>IV. Discretization of Bezier Curves</h2>
+<pre>
+function bezier(controlPoints) {
+  const vertices = [];
+  for (let t = 0; t <= 1; t += 1 / 64) {
+    const points = [...controlPoints];
+    while (points.length > 1) {
+      for (let i = 0; i < points.length - 1; ++i) {
+        const [x1, y1] = points[i];
+        const [x2, y2] = points[i + 1];
+        points[i] = [(1 - t) * x1 + t * x2, (1 - t) * y1 + t * y2];
+      }
+      points.length--;
+    }
+    vertices.push(points[0]);
+  }
+  return vertices;
+}
+</pre>
+<h3>Quadratic Bezier</h3>
+<div>
+  <canvas id="quadratic-bezier"></canvas>
+</div>
+<div>
+  <button id="clear-quadratic-bezier">clear</button>
+</div>
+<h3>Cubic Bezier</h3>
+<div>
+  <canvas id="cubic-bezier"></canvas>
+</div>
+<div>
+  <button id="clear-cubic-bezier">clear</button>
+</div>
+<script type="module" src="bezier.js"></script>
+
+<h2>V. Text</h2>
+<pre>
+function drawText(image, text, dx, dy, size, color) {
+  const vertices = [];
+  let x, y;
+
+  for (const path of font.getPaths(text, dx, dy, size)) {
+    for (const cmd of path.commands) {
+      switch (cmd.type) {
+        case "M":
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "L":
+          vertices.push([x, y], [cmd.x, cmd.y]);
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "Q":
+          vertices.push(
+            ...bezier([
+              [x, y],
+              [cmd.x1, cmd.y1],
+              [cmd.x, cmd.y],
+            ])
+          );
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "C":
+          vertices.push(
+            ...bezier([
+              [x, y],
+              [cmd.x1, cmd.y1],
+              [cmd.x2, cmd.y2],
+              [cmd.x, cmd.y],
+            ])
+          );
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "Z":
+          break;
+      }
+    }
+    fillPolygon(image, vertices, color);
+    vertices.length = 0;
+  }
+}
+</pre>
+<div>
+  <canvas id="font"></canvas>
+</div>
+<div>
+  <input id="font-text" />
+  <input id="font-size" type="number" step="1" value="200" />
+  <button id="clear-font">draw</button>
+</div>
+<script type="module" src="./font.js"></script>
+
+<h2>VI. Compositing and Recursion</h2>
+TODO
+<h2>VII. Code Is Data, Data Is Code</h2>
+TODO
+<h2>VIII. Layout</h2>
+TODO
