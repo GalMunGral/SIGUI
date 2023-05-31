@@ -3,6 +3,9 @@
     width: min(50vw, 600px);
     margin: 50px auto;
   }
+  input[type="number"] {
+    width: 50px;
+  }
   canvas {
     width: min(50vw, 600px);
     height: 300px;
@@ -10,17 +13,24 @@
   }
 </style>
 
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+></script>
+
 <h1>
   Structure and Interpretation of <br />
   User Interfaces
 </h1>
 
-<h2>I. Raster and Pixels</h2>
-<p></p>
-
+<h2>0. Raster</h2>
+<em>Implementation:</em>
 <pre>
 function putPixel(image, x, y, color) {
-  const { data, width } = image;
+  const { data, width, height } = image;
+  if (x < 0 || x >= width || y < 0 || y >= height) return;
   const [r, g, b, a] = round(scale(color, 255));
   data[(y * width + x) * 4] = r;
   data[(y * width + x) * 4 + 1] = g;
@@ -36,7 +46,10 @@ function putPixel(image, x, y, color) {
 </div>
 <script type="module" src="pixel.js"></script>
 
-<h2>II. Rasterization of Polygons</h2>
+<h2>1. Polygons</h2>
+
+<h3>1.1. Polygon Rasterization</h3>
+<em>Implementation:</em>
 <pre>
 function fillPolygon(image, vertices, color) {
   const edges = [];
@@ -81,21 +94,141 @@ function fillPolygon(image, vertices, color) {
   } while (active.length || edges.length);
 }  
 </pre>
+
+<h3>1.2. Polygon Hit-test</h3>
+<p>
+  An "inverse" problem of rasterization is hit-testing: Given a pixel on screen,
+  can we infer which polygon it belongs to? We again employ the even-odd rule
+  that we used for rasterization, i.e. a point lies in the polygon if a ray
+  starting at the point intersects the polygon an odd number of times. To make
+  the computation simpler we can simply shoot the ray in the \(+x\) direction.
+</p>
+<em>Implementation:</em>
+<pre>
+function hitTest([x, y], vertices) {
+  let intersections = 0;
+  for (const i of vertices.keys()) {
+    let [x1, y1] = vertices[i];
+    let [x2, y2] = vertices[(i + 1) % vertices.length];
+    if (y1 > y2) [x1, x2, y1, y2] = [x2, x1, y2, y1];
+    if (y1 <= y && y2 > y) {
+      const intersectionX = x1 + ((x2 - x1) / (y2 - y1)) * (y - y1);
+      if (intersectionX > x) {
+        ++intersections;
+      }
+    }
+  }
+  return intersections & 1;
+}
+</pre>
 <div>
   <canvas id="polygon"></canvas>
 </div>
 <div>
-  <button id="clear-polygon">clear</button>
+  <button id="polygon-clear">clear</button>
 </div>
 <script type="module" src="polygon.js"></script>
 
-<h2>III. Interpolation and Color Gradient</h2>
+<h3>1.3. Linear Transformations</h3>
+<p>
+  To translate, rotate or scale a polygon, we can apply the transformation to
+  each individual vertex before rasterization. If we use homogeneous coordinates
+  \((x, y, 1)\) to represent a point \((x, y)\) in the 2D plane, these
+  transformations can be expressed nicely as \(3\times3\) matrices:
+</p>
+<ul>
+  <li>
+    Translation: $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
+    \end{pmatrix}$$
+  </li>
+  <li>
+    Rotation: $$R_\theta = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
+    \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
+  </li>
+  <li>
+    Scaling: $$S_c = \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1
+    \end{pmatrix}$$
+  </li>
+</ul>
+
+<div>
+  <canvas id="transform"></canvas>
+</div>
+<script type="module" src="transform.js"></script>
+
+<h3>1.4. Parametric Curves</h3>
+<p>
+  Polygons are interesting because we can approximate any curve with a polygon
+  by taking dicrete samples along the curve. If the number of samples is
+  sufficiently large such that each segment becomes subpixel, the polygon would
+  appear indistinguishable from the actual curve!
+</p>
+<p>
+  Using what we have leared so far, we can now draw many more interesting
+  shapes. For example, an elliptic arc from angle \(\phi_1\) to \(\phi_2\) on a
+  ellipse centered at \((x,y)\), with semi-major axis \(a\) and semi-minor axis
+  \(b\), and rotated by an angle \(\theta\), can be drawn as a polygon with \(N
+  + 1\) vertices: $$(x_i, y_i) = T_{(x, y)} \cdot R_\theta \cdot
+  \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 - \phi_1}{N}\right),
+  b\sin\left(\phi_1 + i\cdot\frac{\phi_2 - \phi_1}{N}\right)\right)$$
+</p>
+<em>Implementation</em>
+<pre>
+const vertices = [[cx, cy]];
+for (let i = 0; i <= n; ++i) {
+  vertices.push(
+    compose(
+      translate(cx, cy),
+      rotate(theta)
+    )([
+      a * Math.cos(phi1 + (i * (phi2 - phi1)) / n),
+      b * Math.sin(phi1 + (i * (phi2 - phi1)) / n),
+    ])
+  );
+}
+</pre>
+<div>
+  <canvas id="ellipse"></canvas>
+</div>
+<div>
+  <label>\(N\):</label>
+  <input id="ellipse-n" type="number" value="16" min="2" max="64" />
+  <label>\(a\):</label> <input id="ellipse-a" type="number" value="200" />
+  <label>\(b\):</label> <input id="ellipse-b" type="number" value="150" />
+  <label>\(\theta\):</label>
+  <input id="ellipse-theta" type="number" value="45" />
+  <label>\(\phi_1\):</label>
+  <input id="ellipse-phi-1" type="number" value="0" />
+  <label>\(\phi_2\):</label>
+  <input id="ellipse-phi-2" type="number" value="360" />
+</div>
+<script type="module" src="ellipse.js"></script>
+
+<h2>2. Linear Interpolation</h2>
+To linearly interpolation between two values \(v_1\) and \(v_2\), and then we
+can simply compute \(f(t) = (1-t) \cdot v_1 + t \cdot v_2\), where \(t\) is a
+parameter than indicates progress.
+<em>Implementation</em>
 <pre>
 function interpolate(value1, value2, t) {
   return add(scale(value1, 1 - t), scale(value2, t));
 }
 </pre>
-<h3>Linear Gradient</h3>
+<h3>2.1. Animation and Transition</h3>
+<div>
+  <canvas id="animation"></canvas>
+</div>
+<div>
+  <input id="animation-color-1" type="color" />
+  <input id="animation-color-2" type="color" />
+  <input id="animation-duration" type="number" value="5" min="1" />
+  <button id="animation-start">start</button>
+  <button id="animation-clear">clear</button>
+</div>
+<script type="module" src="animation.js"></script>
+
+<h3>2.2x. Color Gradient</h3>
+<h4>Linear Gradient</h4>
 <pre>
 function linearGradient(y, minY, maxY, color1, color2) {
   return interpolate(color1, color2, (y - minY) / (maxY - minY));
@@ -105,11 +238,10 @@ function linearGradient(y, minY, maxY, color1, color2) {
   <canvas id="linear-gradient"></canvas>
 </div>
 <div>
-  <input id="linear-gradient-color-1" type="color" />
+  <input id="linear-gradient-color-1" type="color" value="#FF0000" />
   <input id="linear-gradient-color-2" type="color" />
-  <button id="clear-linear-gradient">clear</button>
 </div>
-<h3>Radial Gradient</h3>
+<h4>Radial Gradient</h4>
 <pre>
 function radialGradient(p, center, maxRadius, color1, color2) {
   return interpolate(color1, color2, dist(p, center) / maxRadius);
@@ -119,13 +251,18 @@ function radialGradient(p, center, maxRadius, color1, color2) {
   <canvas id="radial-gradient"></canvas>
 </div>
 <div>
-  <input id="radial-gradient-color-1" type="color" />
+  <input id="radial-gradient-color-1" type="color" value="#FF0000" />
   <input id="radial-gradient-color-2" type="color" />
-  <button id="clear-radial-gradient">clear</button>
 </div>
 <script type="module" src="gradient.js"></script>
 
-<h2>IV. Discretization of Bezier Curves</h2>
+<h2>3. Bezier Curves</h2>
+<p>
+  One of the most common shapes you'll find in all user interfaces is the famous
+  Bezier curve, which is again based on linear interpolation!
+</p>
+<h3>3.1. Discretization of Bezier Curves</h3>
+<em>Implementation</em>
 <pre>
 function bezier(controlPoints) {
   const vertices = [];
@@ -144,14 +281,14 @@ function bezier(controlPoints) {
   return vertices;
 }
 </pre>
-<h3>Quadratic Bezier</h3>
+<h4>Quadratic Bezier</h4>
 <div>
   <canvas id="quadratic-bezier"></canvas>
 </div>
 <div>
   <button id="clear-quadratic-bezier">clear</button>
 </div>
-<h3>Cubic Bezier</h3>
+<h4>Cubic Bezier</h4>
 <div>
   <canvas id="cubic-bezier"></canvas>
 </div>
@@ -160,7 +297,8 @@ function bezier(controlPoints) {
 </div>
 <script type="module" src="bezier.js"></script>
 
-<h2>V. Text</h2>
+<h3>3.2. Text</h3>
+<em>Implementation</em>
 <pre>
 function drawText(image, text, dx, dy, size, color) {
   const vertices = [];
@@ -214,15 +352,20 @@ function drawText(image, text, dx, dy, size, color) {
   <canvas id="font"></canvas>
 </div>
 <div>
+  <label>text:</label>
   <input id="font-text" />
+  <label>size:</label>
   <input id="font-size" type="number" step="1" value="200" />
   <button id="clear-font">draw</button>
 </div>
 <script type="module" src="./font.js"></script>
 
-<h2>VI. Compositing and Recursion</h2>
-TODO
-<h2>VII. Code Is Data, Data Is Code</h2>
-TODO
-<h2>VIII. Layout</h2>
-TODO
+<h2>4. Compositing and Composition</h2>
+<h3>4.1. Alpha Compositing</h3>
+<h3>4.2. Recursion</h3>
+<h3>4.3. Layout</h3>
+<h3>4.4. Hit Detection</h3>
+
+<h2>5. Image Processing</h2>
+<h3>5.1. Convolution and Filters</h3>
+<h3>5.2. Resampling</h3>

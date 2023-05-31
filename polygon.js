@@ -2,8 +2,8 @@ import { setup } from "./utils.js";
 import { clear, putPixel } from "./pixel.js";
 
 const canvas = document.querySelector("#polygon");
-const button = document.querySelector("#clear-polygon");
-const { image, onClick } = setup(canvas);
+const button = document.querySelector("#polygon-clear");
+const { image, onClick, onMove } = setup(canvas);
 
 export function fillPolygon(image, vertices, color) {
   const edges = [];
@@ -48,15 +48,45 @@ export function fillPolygon(image, vertices, color) {
   } while (active.length || edges.length);
 }
 
+export function hitTest([x, y], vertices) {
+  let intersections = 0;
+  for (const i of vertices.keys()) {
+    let [x1, y1] = vertices[i];
+    let [x2, y2] = vertices[(i + 1) % vertices.length];
+    if (y1 > y2) [x1, x2, y1, y2] = [x2, x1, y2, y1];
+    if (y1 <= y && y2 > y) {
+      const intersectionX = x1 + ((x2 - x1) / (y2 - y1)) * (y - y1);
+      if (intersectionX > x) {
+        ++intersections;
+      }
+    }
+  }
+  return intersections & 1;
+}
+
+let inside = false;
 const vertices = [];
+
+function draw() {
+  clear(image);
+  fillPolygon(image, vertices, () =>
+    inside ? [0.6, 0.0, 0.0, 1, 0] : [0.0, 0.0, 0.0, 1.0]
+  );
+}
 
 onClick((x, y) => {
   vertices.push([x, y]);
-  clear(image);
-  fillPolygon(image, vertices, () => [0.0, 0.0, 0.0, 1.0]);
+  draw();
+});
+
+onMove((x, y) => {
+  if (hitTest([x, y], vertices) != inside) {
+    inside = !inside;
+    draw();
+  }
 });
 
 button.onclick = () => {
   vertices.length = 0;
-  clear(image);
+  draw();
 };

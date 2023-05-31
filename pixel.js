@@ -9,7 +9,8 @@ export function clear(image) {
 }
 
 export function putPixel(image, x, y, color) {
-  const { data, width } = image;
+  const { data, width, height } = image;
+  if (x < 0 || x >= width || y < 0 || y >= height) return;
   const [r, g, b, a] = round(scale(color, 255));
   data[(y * width + x) * 4] = r;
   data[(y * width + x) * 4 + 1] = g;
@@ -18,7 +19,7 @@ export function putPixel(image, x, y, color) {
 }
 
 onMove((x, y) => {
-  putPixel(image, x, y, [0.0, 0.0, 0.0, 1.0]);
+  putPixel(image, x, y, [Math.random(), Math.random(), Math.random(), 1.0]);
 });
 
 button.onclick = () => {

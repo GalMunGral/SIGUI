@@ -1,4 +1,4 @@
-import { setup, scale, round } from "./utils.js";
+import { setup } from "./utils.js";
 import { fillPolygon } from "./polygon.js";
 import { clear } from "./pixel.js";
 const canvas1 = document.querySelector("#quadratic-bezier");
