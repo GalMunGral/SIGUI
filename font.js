@@ -4,7 +4,7 @@ import { fillPolygon } from "./polygon.js";
 import { setup } from "./utils.js";
 import { clear } from "./pixel.js";
 
-const data = await (await fetch("/Times.ttf")).arrayBuffer();
+const data = await (await fetch("./Times.ttf")).arrayBuffer();
 const font = parse(data);
 
 const canvas = document.querySelector("#font");
