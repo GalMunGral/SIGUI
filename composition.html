@@ -1,0 +1,205 @@
+<style>
+  body {
+    width: min(50vw, 600px);
+    margin: 50px auto;
+  }
+  input[type="number"] {
+    width: 50px;
+  }
+  canvas {
+    width: min(50vw, 600px);
+    height: 300px;
+    border: 1px solid black;
+  }
+</style>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+></script>
+
+<h1>
+  Structure and Interpretation of <br />
+  User Interfaces
+</h1>
+
+<a href="./interpolation">prev</a>
+<a href="./image">next</a>
+
+<h2>4. Compositing and Composition</h2>
+<h3>4.1. Alpha Compositing</h3>
+<pre>
+function putPixel(image, x, y, color) {
+  const { data, width, height } = image;
+  if (x < 0 || x >= width || y < 0 || y >= height) return;
+  const base = (y * width + x) * 4;
+  const [r2, g2, b2, a2] = scale([...data.slice(base, base + 4)], 1 / 255);
+  const [r1, g1, b1, a1] = color;
+  const a = a1 + a2 * (1 - a1);
+  const [r, g, b] = add(
+    scale([r1, g1, b1], a1 / a),
+    scale([r2, g2, b2], (a2 * (1 - a1)) / a)
+  );
+  data[base] = Math.round(r * 255);
+  data[base + 1] = Math.round(g * 255);
+  data[base + 2] = Math.round(b * 255);
+  data[base + 3] = Math.round(a * 255);
+}
+</pre>
+<h3>4.2. Recursion</h3>
+<p>
+  Imagine we are trying to draw a button, which has a green background, rounded
+  corners, a black shadow, and text in the center that says "button".
+</p>
+<pre>
+const labels = ["Foo", "Bar", "Baz"];
+
+box(image.width / 2, image.height / 2, labels, {});
+  
+onClick((x, y) => {
+  clear(image);
+  box(image.width / 2, image.height / 2, labels, {
+    clickX: x,
+    clickY: y,
+  });
+});
+  
+function box(centerX, centerY, labels, events) {
+  const boxWidth = 800;
+  const boxHeight = 500;
+  const buttonWidth = 100;
+  const buttonHeight = 40;
+  
+  const left = centerX - boxWidth / 2;
+  const right = centerX + boxWidth / 2;
+  const top = centerY - boxHeight / 2;
+  const bottom = centerY + boxHeight / 2;
+  
+  const buttonCount = labels.length;
+  const spacing = (boxHeight - buttonCount * buttonHeight) / (buttonCount + 1);
+  if (spacing < 0) throw "not enough space";
+  
+  fillPolygon(
+    image,
+    [
+      [left, top],
+      [right, top],
+      [right, bottom],
+      [left, bottom],
+    ],
+    () => [1, 1, 0.9, 1]
+  );
+  
+  let buttonCenterY = top + spacing + buttonHeight / 2;
+  for (let i = 0; i < buttonCount; ++i) {
+    button(
+      labels[i],
+      centerX,
+      buttonCenterY,
+      buttonWidth,
+      buttonHeight,
+      events
+    );
+    buttonCenterY += spacing + buttonHeight;
+  }
+}
+  
+function button(label, centerX, centerY, width, height, { clickX, clickY }) {
+  const radius = 40;
+  const left = centerX - width;
+  const right = centerX + width;
+  const top = centerY - height;
+  const bottom = centerY + height;
+  
+  const offsetX = 5;
+  const offsetY = 5;
+  const shadowLeft = centerX - width + offsetX;
+  const shadowRight = centerX + width + offsetX;
+  const shadowTop = centerY - height + offsetY;
+  const shadowBottom = centerY + height + offsetY;
+  
+  const shadowBoundary = [
+    ...makeBezier(
+      [shadowLeft, shadowTop + radius],
+      [shadowLeft, shadowTop],
+      [shadowLeft + radius, shadowTop]
+    ),
+    ...makeBezier(
+      [shadowRight - radius, shadowTop],
+      [shadowRight, shadowTop],
+      [shadowRight, shadowTop + radius]
+    ),
+    ...makeBezier(
+      [shadowRight, shadowBottom - radius],
+      [shadowRight, shadowBottom],
+      [shadowRight - radius, shadowBottom]
+    ),
+    ...makeBezier(
+      [shadowLeft + radius, shadowBottom],
+      [shadowLeft, shadowBottom],
+      [shadowLeft, shadowBottom - radius]
+    ),
+  ];
+  
+  const backgroundBoundary = [
+    ...makeBezier([left, top + radius], [left, top], [left + radius, top]),
+    ...makeBezier([right - radius, top], [right, top], [right, top + radius]),
+    ...makeBezier(
+      [right, bottom - radius],
+      [right, bottom],
+      [right - radius, bottom]
+    ),
+    ...makeBezier([left + radius, bottom], [left, bottom], [left, bottom - radius]),
+  ];
+  
+  const hit = hitTest([clickX, clickY], backgroundBoundary);
+  
+  const backgroundColor = hit
+    ? [0.5, 0.5, 0.5, 1]
+    : [15 / 255, 157 / 255, 88 / 255, 1];
+  
+  const shadowAlpha = (x, y) => {
+    const dist = Math.min(
+      x - shadowLeft,
+      shadowRight - x,
+      y - shadowTop,
+      shadowBottom - y
+    );
+  
+    const maxDist = Math.max(
+      shadowRight - shadowLeft,
+      shadowBottom - shadowTop
+    );
+    return (dist / maxDist) ** 0.5;
+  };
+  
+  fillPolygon(image, shadowBoundary, (x, y) => [0, 0, 0, shadowAlpha(x, y)]);
+  fillPolygon(image, backgroundBoundary, () => backgroundColor);
+  text(label, centerX, centerY, width, height);
+}
+  
+function text(s, centerX, centerY, width, height) {
+  let fontSize = height;
+  let textWidth;
+  
+  while (fontSize > 0) {
+    const path = font.getPath(s, 0, 0, fontSize);
+    const rect = path.getBoundingBox();
+    textWidth = rect.x2 - rect.x1;
+    if (textWidth < width) break;
+    --fontSize;
+  }
+  
+  const x = centerX - textWidth / 2;
+  const y = centerY + fontSize / 4;
+  
+  drawText(image, s, x, y, fontSize, () => [1, 1, 1, 1]);
+}
+  
+</pre>
+<div>
+  <canvas id="recursion"></canvas>
+</div>
+<script type="module" src="./demo/recursion.js"></script>

@@ -1,0 +1,174 @@
+<style>
+  body {
+    width: min(50vw, 600px);
+    margin: 50px auto;
+  }
+  input[type="number"] {
+    width: 50px;
+  }
+  canvas {
+    width: min(50vw, 600px);
+    height: 300px;
+    border: 1px solid black;
+  }
+</style>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+></script>
+
+<h1>
+  Structure and Interpretation of <br />
+  User Interfaces
+</h1>
+
+<a href="./polygons">prev</a>
+<a href="./composition">next</a>
+
+<h2>2. Linear Interpolation</h2>
+To linearly interpolation between two values \(v_1\) and \(v_2\), and then we
+can simply compute \(f(t) = (1-t) \cdot v_1 + t \cdot v_2\), where \(t\) is a
+parameter than indicates progress.
+<em>Implementation</em>
+<pre>
+function interpolate(value1, value2, t) {
+  return add(scale(value1, 1 - t), scale(value2, t));
+}
+</pre>
+
+<h3>2.1. Bezier Curves</h3>
+<p>
+  One of the most common shapes you'll find in all user interfaces is the famous
+  Bezier curve, which is again based on linear interpolation!
+</p>
+<em>Implementation</em>
+<pre>
+function makeBezier(controlPoints) {
+  const vertices = [];
+  for (let t = 0; t <= 1; t += 1 / 64) {
+    const points = [...controlPoints];
+    while (points.length > 1) {
+      for (let i = 0; i < points.length - 1; ++i) {
+        const [x1, y1] = points[i];
+        const [x2, y2] = points[i + 1];
+        points[i] = [(1 - t) * x1 + t * x2, (1 - t) * y1 + t * y2];
+      }
+      points.length--;
+    }
+    vertices.push(points[0]);
+  }
+  return vertices;
+}
+</pre>
+<h4>Quadratic Bezier</h4>
+<div>
+  <canvas id="quadratic-bezier"></canvas>
+</div>
+<div>
+  <button id="clear-quadratic-bezier">clear</button>
+</div>
+<h4>Cubic Bezier</h4>
+<div>
+  <canvas id="cubic-bezier"></canvas>
+</div>
+<div>
+  <button id="clear-cubic-bezier">clear</button>
+</div>
+<script type="module" src="./demo/bezier.js"></script>
+
+<h3>2.2. Text</h3>
+<em>Implementation</em>
+<pre>
+function drawText(image, text, dx, dy, size, color) {
+  const vertices = [];
+  let x, y;
+
+  for (const path of font.getPaths(text, dx, dy, size)) {
+    for (const cmd of path.commands) {
+      switch (cmd.type) {
+        case "M":
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "L":
+          vertices.push([x, y], [cmd.x, cmd.y]);
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "Q":
+          vertices.push(
+            ...makeBezier(
+              [x, y],
+              [cmd.x1, cmd.y1],
+              [cmd.x, cmd.y],
+            )
+          );
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "C":
+          vertices.push(
+            ...makeBezier(
+              [x, y],
+              [cmd.x1, cmd.y1],
+              [cmd.x2, cmd.y2],
+              [cmd.x, cmd.y],
+            )
+          );
+          x = cmd.x;
+          y = cmd.y;
+          break;
+        case "Z":
+          break;
+      }
+    }
+    fillPolygon(image, vertices, color);
+    vertices.length = 0;
+  }
+}
+</pre>
+<div>
+  <canvas id="font"></canvas>
+</div>
+<div>
+  <label>text:</label>
+  <input id="font-text" value="Hello, world!" />
+  <label>size:</label>
+  <input id="font-size" type="number" step="1" value="100" />
+</div>
+<script type="module" src="./demo/font.js"></script>
+
+<h3>2.3. Animation and Transition</h3>
+<div>
+  <canvas id="animation"></canvas>
+</div>
+<div>
+  <input id="animation-color-1" type="color" value="#CA639A" />
+  <input id="animation-color-2" type="color" value="#3C989F" />
+  <input id="animation-duration" type="number" value="5" min="1" />
+  <button id="animation-start">start</button>
+  <button id="animation-clear">clear</button>
+</div>
+<script type="module" src="./demo/animation.js"></script>
+
+<h3>2.4. Color Gradient</h3>
+<h4>Linear Gradient</h4>
+<pre>
+function linearGradient(y, minY, maxY, color1, color2) {
+  return interpolate(color1, color2, (y - minY) / (maxY - minY));
+}
+function radialGradient(p, center, maxRadius, color1, color2) {
+  return interpolate(color1, color2, dist(p, center) / maxRadius);
+}
+</pre>
+<div>
+  <canvas id="gradient"></canvas>
+</div>
+<div>
+  <input id="gradient-color-1" type="color" value="#CA639A" />
+  <input id="gradient-color-2" type="color" value="#3C989F" />
+</div>
+<script type="module" src="./demo/gradient.js"></script>

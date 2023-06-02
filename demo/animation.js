@@ -1,10 +1,11 @@
-import { setup } from "./utils.js";
-import { fillPolygon } from "./polygon.js";
-import { clear } from "./pixel.js";
-import { interpolate, parseColor } from "./gradient.js";
-import { translate } from "./transform.js";
+import { setup, translate } from "../modules/utils.js";
+import { fillPolygon, polygon } from "../modules/polygon.js";
+import { clear } from "../modules/pixel.js";
+import { interpolate, parseColor } from "../modules/gradient.js";
+import { makeText } from "../modules/font.js";
 
 const canvas = document.querySelector("#animation");
+const inputText = document.querySelector("#font-text");
 const colorInput1 = document.querySelector("#animation-color-1");
 const colorInput2 = document.querySelector("#animation-color-2");
 const durationInput = document.querySelector("#animation-duration");
@@ -13,13 +14,9 @@ const startButton = document.querySelector("#animation-start");
 
 const { image, onClick } = setup(canvas);
 
-const S = 50;
-const vertices = [
-  [-S, -S],
-  [S, -S],
-  [S, S],
-  [-S, S],
-];
+const fontSize = 60;
+const textVertices = makeText(inputText.value, 0, fontSize);
+
 const controlPoints = [];
 let start = 0;
 let handle;
@@ -42,11 +39,13 @@ function draw() {
   const color = interpolate(color1, color2, t / duration);
 
   clear(image);
-  fillPolygon(
-    image,
-    vertices.map((p) => translate(x, y)(p)),
-    () => color
-  );
+  for (const vertices of textVertices) {
+    fillPolygon(
+      image,
+      polygon(vertices.map((p) => translate(x, y)(p))),
+      () => color
+    );
+  }
 
   handle = requestAnimationFrame(draw);
 }
