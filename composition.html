@@ -1,5 +1,6 @@
 <style>
   body {
+    user-select: none;
     width: min(50vw, 600px);
     margin: 50px auto;
   }
@@ -54,152 +55,73 @@ function putPixel(image, x, y, color) {
   corners, a black shadow, and text in the center that says "button".
 </p>
 <pre>
-const labels = ["Foo", "Bar", "Baz"];
-
-box(image.width / 2, image.height / 2, labels, {});
+class UIRenderer {
+  pending = [];
+  committed = [];
   
-onClick((x, y) => {
-  clear(image);
-  box(image.width / 2, image.height / 2, labels, {
-    clickX: x,
-    clickY: y,
-  });
-});
-  
-function box(centerX, centerY, labels, events) {
-  const boxWidth = 800;
-  const boxHeight = 500;
-  const buttonWidth = 100;
-  const buttonHeight = 40;
-  
-  const left = centerX - boxWidth / 2;
-  const right = centerX + boxWidth / 2;
-  const top = centerY - boxHeight / 2;
-  const bottom = centerY + boxHeight / 2;
-  
-  const buttonCount = labels.length;
-  const spacing = (boxHeight - buttonCount * buttonHeight) / (buttonCount + 1);
-  if (spacing < 0) throw "not enough space";
-  
-  fillPolygon(
-    image,
-    [
-      [left, top],
-      [right, top],
-      [right, bottom],
-      [left, bottom],
-    ],
-    () => [1, 1, 0.9, 1]
-  );
-  
-  let buttonCenterY = top + spacing + buttonHeight / 2;
-  for (let i = 0; i < buttonCount; ++i) {
-    button(
-      labels[i],
-      centerX,
-      buttonCenterY,
-      buttonWidth,
-      buttonHeight,
-      events
+  constructor(canvas, root) {
+    this.root = root;
+    this.root.render(this);
+    setup(
+      canvas,
+      (buffer) => {
+        if (this.pending.length) {
+          this.commit(buffer);
+        }
+      },
+      {
+        onClick: (p) => {
+          const comp = this.hitTest(p);
+          if (comp?.handleClick?.(p)) {
+            this.root.render(this);
+          }
+        },
+        onPointerDown: (p) => {
+          const comp = this.hitTest(p);
+          if (comp?.handlePointerDown?.(p)) {
+            this.root.render(this);
+          }
+        },
+        onPointerMove: (p) => {
+          const comp = this.hitTest(p);
+          if (comp?.handlePointerMove?.(p)) {
+            this.root.render(this);
+          }
+        },
+        onPointerUp: (p) => {
+          const comp = this.hitTest(p);
+          if (comp?.handlePointerUp?.(p)) {
+            this.root.render(this);
+          }
+        },
+      }
     );
-    buttonCenterY += spacing + buttonHeight;
-  }
-}
-  
-function button(label, centerX, centerY, width, height, { clickX, clickY }) {
-  const radius = 40;
-  const left = centerX - width;
-  const right = centerX + width;
-  const top = centerY - height;
-  const bottom = centerY + height;
-  
-  const offsetX = 5;
-  const offsetY = 5;
-  const shadowLeft = centerX - width + offsetX;
-  const shadowRight = centerX + width + offsetX;
-  const shadowTop = centerY - height + offsetY;
-  const shadowBottom = centerY + height + offsetY;
-  
-  const shadowBoundary = [
-    ...makeBezier(
-      [shadowLeft, shadowTop + radius],
-      [shadowLeft, shadowTop],
-      [shadowLeft + radius, shadowTop]
-    ),
-    ...makeBezier(
-      [shadowRight - radius, shadowTop],
-      [shadowRight, shadowTop],
-      [shadowRight, shadowTop + radius]
-    ),
-    ...makeBezier(
-      [shadowRight, shadowBottom - radius],
-      [shadowRight, shadowBottom],
-      [shadowRight - radius, shadowBottom]
-    ),
-    ...makeBezier(
-      [shadowLeft + radius, shadowBottom],
-      [shadowLeft, shadowBottom],
-      [shadowLeft, shadowBottom - radius]
-    ),
-  ];
-  
-  const backgroundBoundary = [
-    ...makeBezier([left, top + radius], [left, top], [left + radius, top]),
-    ...makeBezier([right - radius, top], [right, top], [right, top + radius]),
-    ...makeBezier(
-      [right, bottom - radius],
-      [right, bottom],
-      [right - radius, bottom]
-    ),
-    ...makeBezier([left + radius, bottom], [left, bottom], [left, bottom - radius]),
-  ];
-  
-  const hit = hitTest([clickX, clickY], backgroundBoundary);
-  
-  const backgroundColor = hit
-    ? [0.5, 0.5, 0.5, 1]
-    : [15 / 255, 157 / 255, 88 / 255, 1];
-  
-  const shadowAlpha = (x, y) => {
-    const dist = Math.min(
-      x - shadowLeft,
-      shadowRight - x,
-      y - shadowTop,
-      shadowBottom - y
-    );
-  
-    const maxDist = Math.max(
-      shadowRight - shadowLeft,
-      shadowBottom - shadowTop
-    );
-    return (dist / maxDist) ** 0.5;
-  };
-  
-  fillPolygon(image, shadowBoundary, (x, y) => [0, 0, 0, shadowAlpha(x, y)]);
-  fillPolygon(image, backgroundBoundary, () => backgroundColor);
-  text(label, centerX, centerY, width, height);
-}
-  
-function text(s, centerX, centerY, width, height) {
-  let fontSize = height;
-  let textWidth;
-  
-  while (fontSize > 0) {
-    const path = font.getPath(s, 0, 0, fontSize);
-    const rect = path.getBoundingBox();
-    textWidth = rect.x2 - rect.x1;
-    if (textWidth < width) break;
-    --fontSize;
   }
   
-  const x = centerX - textWidth / 2;
-  const y = centerY + fontSize / 4;
+  hitTest(p) {
+    for (const { component, polygon } of this.committed) {
+      if (polygon.contains(p)) {
+        return component;
+      }
+    }
+  }
   
-  drawText(image, s, x, y, fontSize, () => [1, 1, 1, 1]);
+  render(component, polygon, color) {
+    this.pending.push({ component, polygon, color });
+  }
+  
+  commit(buffer) {
+    buffer.clear();
+    this.pending.forEach(({ polygon, color }) => {
+      polygon.fill(buffer, color);
+    });
+    this.committed = this.pending.reverse();
+    this.pending = [];
+  }
 }
   
 </pre>
 <div>
   <canvas id="recursion"></canvas>
 </div>
-<script type="module" src="./demo/recursion.js"></script>
+<script type="module" src="./demo/composition.js"></script>

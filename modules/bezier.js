@@ -1,6 +1,6 @@
 import { Point } from "./utils.js";
 
-export function sampleBezier(controlPoints, n = 64) {
+export function sampleBezier(controlPoints, n = 32) {
   const res = [];
   for (let t = 0; t <= 1; t += 1 / n) {
     const points = [...controlPoints];

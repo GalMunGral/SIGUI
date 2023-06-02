@@ -121,6 +121,12 @@ export class Polygon {
   }
 }
 
+export function simplePolygon(vertices) {
+  return new Polygon(
+    vertices.map((p, i) => new Edge(p, vertices[(i + 1) % vertices.length]))
+  );
+}
+
 // export function polygon(vertices) {
 //   return [...vertices.keys()]
 //     .map((i) => makeEdge(vertices[i], vertices[(i + 1) % vertices.length]))

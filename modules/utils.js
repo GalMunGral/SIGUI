@@ -1,5 +1,8 @@
 export class Point {
   constructor(x, y) {
+    if (isNaN(x) || isNaN(y)) {
+      throw new Error("invalid coordinates!");
+    }
     this.x = x;
     this.y = y;
   }
@@ -34,6 +37,7 @@ export class Point {
 export class Color {
   static WHITE = new Color(1, 1, 1);
   static BLACK = new Color(0, 0, 0);
+  static RED = new Color(1, 0, 0);
   static TRANSPARENT = new Color(0, 0, 0, 0);
 
   static parse(s) {
