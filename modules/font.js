@@ -1,6 +1,7 @@
 import { parse } from "https://unpkg.com/opentype.js/dist/opentype.module.js";
-import { makeBezier } from "./bezier.js";
-import { fillPolygon, polygon } from "./polygon.js";
+import { sampleBezier } from "./bezier.js";
+import { Edge, Polygon } from "./polygon.js";
+import { Point } from "./utils.js";
 
 const data = await (await fetch("./Times.ttf")).arrayBuffer();
 
@@ -8,51 +9,55 @@ export const font = parse(data);
 
 export function makeText(text, dx, dy, size) {
   const edges = [];
-  let x, y;
+  let start = null;
+  let prev = null;
 
   for (const path of font.getPaths(text, dx, dy, size)) {
     for (const cmd of path.commands) {
       switch (cmd.type) {
-        case "M":
-          x = cmd.x;
-          y = cmd.y;
+        case "M": {
+          start = prev = new Point(cmd.x, cmd.y);
           break;
-        case "L":
-          vertices.push([x, y], [cmd.x, cmd.y]);
-          x = cmd.x;
-          y = cmd.y;
+        }
+        case "L": {
+          const p = new Point(cmd.x, cmd.y);
+          edges.push(new Edge(prev, p));
+          prev = p;
           break;
-        case "Q":
-          vertices.push(
-            ...makeBezier([x, y], [cmd.x1, cmd.y1], [cmd.x, cmd.y])
+        }
+        case "Q": {
+          const vertices = sampleBezier(
+            [prev, new Point(cmd.x1, cmd.y1), new Point(cmd.x, cmd.y)],
+            10
           );
-          x = cmd.x;
-          y = cmd.y;
+          for (const p of vertices) {
+            edges.push(new Edge(prev, p));
+            prev = p;
+          }
           break;
-        case "C":
-          vertices.push(
-            ...makeBezier(
-              [x, y],
-              [cmd.x1, cmd.y1],
-              [cmd.x2, cmd.y2],
-              [cmd.x, cmd.y]
-            )
+        }
+        case "C": {
+          const vertices = sampleBezier(
+            [
+              prev,
+              new Point(cmd.x1, cmd.y1),
+              new Point(cmd.x2, cmd.y2),
+              new Point(cmd.x, cmd.y),
+            ],
+            10
           );
-          x = cmd.x;
-          y = cmd.y;
+          for (const p of vertices) {
+            edges.push(new Edge(prev, p));
+            prev = p;
+          }
           break;
-        case "Z":
+        }
+        case "Z": {
+          edges.push(new Edge(prev, start));
           break;
+        }
       }
     }
-    res.push(vertices);
-    vertices = [];
   }
-  return res;
-}
-
-export function drawText(image, text, dx, dy, size, color) {
-  for (const vertices of makeText(text, dx, dy, size)) {
-    fillPolygon(image, polygon(vertices), color);
-  }
+  return new Polygon(edges);
 }

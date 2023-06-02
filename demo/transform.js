@@ -1,5 +1,4 @@
-import { clear } from "../modules/pixel.js";
-import { Point, setup } from "../modules/utils.js";
+import { Color, Point, setup } from "../modules/utils.js";
 import { Edge, Polygon } from "../modules/polygon.js";
 
 const canvas = document.querySelector("#transform");
@@ -9,11 +8,12 @@ const p1 = new Point(-S, -S);
 const p2 = new Point(S, -S);
 const p3 = new Point(S, S);
 const p4 = new Point(-S, S);
-const square = new Polygon()
-  .addEdge(p1, p2)
-  .addEdge(p2, p3)
-  .addEdge(p3, p4)
-  .addEdge(p4, p1);
+const square = new Polygon([
+  new Edge(p1, p2),
+  new Edge(p2, p3),
+  new Edge(p3, p4),
+  new Edge(p4, p1),
+]);
 
 let dx = 100;
 let dy = 100;
@@ -26,14 +26,14 @@ let initial = true;
 setup(
   canvas,
   (buffer) => {
-    const boundary = square.rotate(t).scale(s).translate(dx, dy);
+    const transformed = square.rotate(t).scale(s).translate(dx, dy);
     if (initial) {
       initial = false;
-      boundary.fill(buffer, () => [0.0, 0.0, 0.0, 1.0]);
+      transformed.fill(buffer, () => Color.BLACK);
     }
     if (dragging) {
-      clear(buffer);
-      boundary.fill(buffer, () => [0.0, 0.0, 0.0, 1.0]);
+      buffer.clear();
+      transformed.fill(buffer, () => Color.BLACK);
     }
   },
   {

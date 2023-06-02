@@ -1,5 +1,3 @@
-import { putPixel } from "./pixel.js";
-
 export class Edge {
   constructor(p1, p2) {
     this.p1 = p1;
@@ -28,17 +26,11 @@ export class Edge {
   }
 
   rotate(theta) {
-    let p1 = this.p1.rotate(theta);
-    let p2 = this.p2.rotate(theta);
-    if (p1.y > p2.y) [p1, p2] = [p2, p1];
-    return new Edge(p1, p2);
+    return new Edge(this.p1.rotate(theta), this.p2.rotate(theta));
   }
 
   scale(c) {
-    let p1 = this.p1.scale(c);
-    let p2 = this.p2.scale(c);
-    if (p1.y > p2.y) [p1, p2] = [p2, p1];
-    return new Edge(p1, p2);
+    return new Edge(this.p1.scale(c), this.p2.scale(c));
   }
 }
 
@@ -51,19 +43,29 @@ class ActiveEdge {
 }
 
 export class Polygon {
+  _visibleEdges = null;
   constructor(edges = []) {
     this.edges = edges;
-    // ignore edges that don't cross any scan lines
-    this.visibleEdges = edges
-      .filter(({ y1, y2 }) => Math.ceil(y1) < y2)
-      .sort((e1, e2) => e1.compare(e2));
   }
 
-  addEdge(p1, p2) {
-    if (!p1 || !p2) return this;
-    if (p1.y > p2.y) [p1, p2] = [p2, p1];
-    return new Polygon([...this.edges, new Edge(p1, p2)]);
+  get visibleEdges() {
+    if (!this._visibleEdges) {
+      this._visibleEdges = this.edges
+        .map((e) => (e.y1 > e.y2 ? new Edge(e.p2, e.p1) : e))
+        // ignore edges that don't cross any scan lines
+        .filter(({ y1, y2 }) => Math.ceil(y1) < y2)
+        .sort((e1, e2) => e1.compare(e2));
+    }
+    return this._visibleEdges;
   }
+
+  // addEdge(p1, p2) {
+  //   if (p1 && p2) {
+  //     this.edges.push(new Edge(p1, p2));
+  //     this._visibleEdges = null;
+  //   }
+  //   return this;
+  // }
 
   translate(dx, dy) {
     return new Polygon(this.edges.map((e) => e.translate(dx, dy)));
@@ -101,7 +103,7 @@ export class Polygon {
       }
       for (let i = 0; i < active.length; i += 2) {
         for (let x = Math.ceil(active[i].x); x < active[i + 1].x; ++x) {
-          putPixel(buffer, x, y, color(x, y));
+          buffer.putPixel(x, y, color(x, y));
         }
       }
       ++y;

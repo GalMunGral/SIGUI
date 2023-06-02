@@ -1,39 +1,24 @@
-import { setup } from "../modules/utils.js";
-import { clear } from "../modules/pixel.js";
-import { drawText, font } from "../modules/font.js";
+import { Color, setup } from "../modules/utils.js";
+import { makeText } from "../modules/font.js";
 
 const canvas = document.querySelector("#font");
 const inputSize = document.querySelector("#font-size");
 const inputText = document.querySelector("#font-text");
-const { image, onDrag } = setup(canvas);
 
 let x = 0;
 let y = +inputSize.value;
 let dirty = true;
 
-requestAnimationFrame(function draw() {
+inputSize.oninput = inputText.oninput = () => {
+  dirty = true;
+};
+
+setup(canvas, (buffer) => {
   if (dirty) {
     dirty = false;
+    const text = inputText.value;
     const fontSize = +inputSize.value || 0;
-
-    clear(image);
-    drawText(image, inputText.value, x, y, fontSize, () => [
-      0.0, 0.0, 0.0, 1.0,
-    ]);
+    buffer.clear();
+    makeText(text, x, y, fontSize).fill(buffer, () => Color.BLACK);
   }
-  requestAnimationFrame(draw);
 });
-
-onDrag((dx, dy) => {
-  x += dx;
-  y += dy;
-  dirty = true;
-});
-
-inputSize.oninput = () => {
-  dirty = true;
-};
-
-inputText.oninput = () => {
-  dirty = true;
-};
