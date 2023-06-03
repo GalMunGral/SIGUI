@@ -1,7 +1,7 @@
 import { Color, setup } from "../modules/utils.js";
 
-const canvas = document.querySelector("#pixel");
-const textDisplay = document.querySelector("#pointer-coordinates");
+const canvas = document.querySelector("#raster");
+const textDisplay = document.querySelector("#pointer-xy");
 
 let rendered = false;
 setup(
@@ -22,7 +22,7 @@ setup(
   },
   {
     onPointerMove({ x, y }) {
-      textDisplay.textContent = `(${x}, ${y})`;
+      textDisplay.textContent = `x=${x}, y=${y})`;
     },
   }
 );

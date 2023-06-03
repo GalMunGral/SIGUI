@@ -3,7 +3,7 @@ import { sampleBezier } from "./bezier.js";
 import { Edge, Polygon } from "./polygon.js";
 import { Point } from "./utils.js";
 
-const data = await (await fetch("./NotoSerif.ttf")).arrayBuffer();
+const data = await (await fetch("./NotoSans-Bold.ttf")).arrayBuffer();
 
 export const font = parse(data);
 

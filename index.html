@@ -22,10 +22,7 @@
   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 ></script>
 
-<h1>
-  Structure and Interpretation of <br />
-  User Interfaces
-</h1>
+<h1>Structure and Interpretation of User Interfaces: The Tao of Illusions</h1>
 
 <h2>0. Raster</h2>
 <em>Implementation:</em>
@@ -41,12 +38,12 @@ function putPixel(image, x, y, color) {
 }
 </pre>
 <div>
-  <canvas id="pixel"></canvas>
+  <canvas id="raster"></canvas>
 </div>
 <div>
-  <code id="pointer-coordinates">test</code>
+  <code id="pointer-xy"></code>
 </div>
-<script type="module" src="./demo/pixel.js"></script>
+<script type="module" src="./demo/raster.js"></script>
 
 <h2>1. Polygons</h2>
 
@@ -450,7 +447,7 @@ class UIRenderer {
   <label>button height: </label>
   <input id="button-height" type="number" min="100" max="200" />
   <label>button width: </label>
-  <input id="button-width" type="number" min="120" max="400" />
+  <input id="button-width" type="number" min="120" max="500" />
   <label>button border radius: </label>
   <input id="button-radius" type="number" min="0" max="100" />
 </div>

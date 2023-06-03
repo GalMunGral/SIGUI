@@ -130,8 +130,8 @@ class Button {
       ]),
     ]);
 
-    const offsetX = 4;
-    const offsetY = 4;
+    const offsetX = 5;
+    const offsetY = 5;
 
     this.shadowGeometry = this.geometry
       .translate(-centerX, -centerY)
@@ -156,7 +156,7 @@ class Button {
   }
 
   render(renderer) {
-    const shadowColor = new Color(0.5, 0.5, 0.5, 0.5);
+    const shadowColor = new Color(0.3, 0.3, 0.3, 0.3);
     const backgroundColor = this.active
       ? new Color(15 / 255, 137 / 255, 88 / 255)
       : this.hover
@@ -167,8 +167,9 @@ class Button {
       renderer.blur(this.blurGeometry);
     }
 
-    renderer.render(this, this.shadowGeometry, () => shadowColor);
+    renderer.render(null, this.shadowGeometry, () => shadowColor);
     renderer.render(this, this.geometry, () => backgroundColor);
+
     this.text.render(renderer);
   }
 }

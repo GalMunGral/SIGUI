@@ -70,21 +70,23 @@ setup(
       if (controlPoints.length == 0) {
         controlPoints.push(p);
       } else {
-        // reflection
-        const cp = controlPoints[controlPoints.length - 1]
+        // the new control point is a reflection
+        // of the last one w.r.t the current keyframe point
+        const lastControlPoint = controlPoints[controlPoints.length - 1]
           .translate(-p.x, -p.y)
           .normalize()
           .scale(-300)
           .translate(p.x, p.y);
 
-        controlPoints.push(cp);
+        controlPoints.push(lastControlPoint);
 
-        const first = keyframes[0];
-        controlPoints[0] = cp
-          .translate(-first.x, -first.y)
+        // close the loop
+        const firstKeyframe = keyframes[0];
+        controlPoints[0] = lastControlPoint
+          .translate(-firstKeyframe.x, -firstKeyframe.y)
           .normalize()
           .scale(-300)
-          .translate(first.x, first.y);
+          .translate(firstKeyframe.x, firstKeyframe.y);
       }
 
       if (start < Date.now() && controlPoints.length >= 2) {
