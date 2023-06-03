@@ -3,7 +3,7 @@ import { sampleBezier } from "./bezier.js";
 import { Edge, Polygon } from "./polygon.js";
 import { Point } from "./utils.js";
 
-const data = await (await fetch("./Times.ttf")).arrayBuffer();
+const data = await (await fetch("./NotoSerif.ttf")).arrayBuffer();
 
 export const font = parse(data);
 
@@ -26,10 +26,11 @@ export function makeText(text, dx, dy, size) {
           break;
         }
         case "Q": {
-          const vertices = sampleBezier(
-            [prev, new Point(cmd.x1, cmd.y1), new Point(cmd.x, cmd.y)],
-            10
-          );
+          const vertices = sampleBezier([
+            prev,
+            new Point(cmd.x1, cmd.y1),
+            new Point(cmd.x, cmd.y),
+          ]);
           for (const p of vertices) {
             edges.push(new Edge(prev, p));
             prev = p;
@@ -37,15 +38,12 @@ export function makeText(text, dx, dy, size) {
           break;
         }
         case "C": {
-          const vertices = sampleBezier(
-            [
-              prev,
-              new Point(cmd.x1, cmd.y1),
-              new Point(cmd.x2, cmd.y2),
-              new Point(cmd.x, cmd.y),
-            ],
-            10
-          );
+          const vertices = sampleBezier([
+            prev,
+            new Point(cmd.x1, cmd.y1),
+            new Point(cmd.x2, cmd.y2),
+            new Point(cmd.x, cmd.y),
+          ]);
           for (const p of vertices) {
             edges.push(new Edge(prev, p));
             prev = p;

@@ -5,8 +5,6 @@ const canvas = document.querySelector("#font");
 const inputSize = document.querySelector("#font-size");
 const inputText = document.querySelector("#font-text");
 
-let x = 0;
-let y = +inputSize.value;
 let dirty = true;
 
 inputSize.oninput = inputText.oninput = () => {
@@ -16,9 +14,10 @@ inputSize.oninput = inputText.oninput = () => {
 setup(canvas, (buffer) => {
   if (dirty) {
     dirty = false;
-    const text = inputText.value;
-    const fontSize = +inputSize.value || 0;
     buffer.clear();
-    makeText(text, x, y, fontSize).fill(buffer, () => Color.BLACK);
+    makeText(inputText.value, 50, buffer.height / 2, +inputSize.value).fill(
+      buffer,
+      () => Color.BLACK
+    );
   }
 });

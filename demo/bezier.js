@@ -16,7 +16,7 @@ function fillBezier(buffer, controlPoints, order, color) {
   const vertices = [];
   for (let i = 0; i < controlPoints.length; i += order) {
     if (controlPoints.length - i > order) {
-      vertices.push(...sampleBezier(controlPoints.slice(i, i + order + 1)));
+      vertices.push(...sampleBezier(controlPoints.slice(i, i + order + 1), 64));
     }
   }
   const edges = [];

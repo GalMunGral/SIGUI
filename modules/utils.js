@@ -7,6 +7,11 @@ export class Point {
     this.y = y;
   }
 
+  normalize() {
+    const l = Math.sqrt(this.x ** 2 + this.y ** 2);
+    return this.scale(1 / l, 1 / l);
+  }
+
   dist(other) {
     return Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
   }
@@ -52,6 +57,19 @@ export class Color {
     this.g = g;
     this.b = b;
     this.a = a;
+  }
+
+  add(other) {
+    return new Color(
+      this.r + other.r,
+      this.g + other.g,
+      this.b + other.b,
+      this.a + other.a
+    );
+  }
+
+  scale(c) {
+    return new Color(this.r * c, this.g * c, this.b * c, this.a * c);
   }
 
   interpolate(other, t) {
@@ -136,11 +154,22 @@ export function setup(
 
   const buffer = new Buffer(imageData);
 
+  let visible = false;
+  new IntersectionObserver(
+    (entries) => {
+      visible = entries[0].isIntersecting;
+    },
+    { threshold: 1 }
+  ).observe(canvas);
+
   requestAnimationFrame(function draw() {
-    drawFn(buffer);
-    if (buffer.dirty) {
-      ctx.putImageData(imageData, 0, 0);
-      buffer.dirty = false;
+    // console.log(visible);
+    if (visible) {
+      drawFn(buffer);
+      if (buffer.dirty) {
+        ctx.putImageData(imageData, 0, 0);
+        buffer.dirty = false;
+      }
     }
     requestAnimationFrame(draw);
   });
