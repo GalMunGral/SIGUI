@@ -85,7 +85,9 @@ export class UIRenderer {
     this.postprocessing.forEach(({ polygon }) => {
       blur(buffer, polygon);
     });
-    this.committed = this.pending.reverse();
+    this.committed = this.pending
+      .reverse()
+      .filter(({ component }) => component);
     this.pending = [];
     this.postprocessing = [];
   }

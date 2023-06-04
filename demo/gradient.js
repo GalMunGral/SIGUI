@@ -10,6 +10,7 @@ let color1 = [0.0, 0.0, 0.0, 1.0];
 let color2 = [0.0, 0.0, 0.0, 1.0];
 
 const S = 150;
+const margin = 50;
 const p1 = new Point(-S, -S);
 const p2 = new Point(+S, -S);
 const p3 = new Point(S, S);
@@ -30,13 +31,20 @@ setup(canvas, (buffer) => {
   const centerY = buffer.height / 2;
 
   buffer.clear();
+
   square
-    .translate(centerX - S - 20, centerY)
+    .translate(centerX + S + margin, centerY)
     .fill(buffer, linearGradient(centerY - S, centerY + S, color1, color2));
+
   square
-    .translate(centerX + S + 20, centerY)
+    .translate(centerX - S - margin, centerY)
     .fill(
       buffer,
-      radialGradient(new Point(centerX + S, centerY), S, color1, color2)
+      radialGradient(
+        new Point(centerX - 2 * S - margin, centerY - S),
+        Math.sqrt(8) * S,
+        color1,
+        color2
+      )
     );
 });

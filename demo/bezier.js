@@ -4,8 +4,6 @@ import { sampleBezier } from "../modules/bezier.js";
 
 const canvas1 = document.querySelector("#quadratic-bezier");
 const canvas2 = document.querySelector("#cubic-bezier");
-const button1 = document.querySelector("#clear-quadratic-bezier");
-const button2 = document.querySelector("#clear-cubic-bezier");
 
 let dirty1 = false;
 let dirty2 = false;
@@ -25,16 +23,6 @@ function fillBezier(buffer, controlPoints, order, color) {
   }
   new Polygon(edges).fill(buffer, color);
 }
-
-button1.onclick = () => {
-  controlPoints1.length = 0;
-  dirty1 = true;
-};
-
-button2.onclick = () => {
-  controlPoints2.length = 0;
-  dirty2 = true;
-};
 
 setup(
   canvas1,

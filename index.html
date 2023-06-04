@@ -1,454 +1,467 @@
-<style>
-  body {
-    user-select: none;
-    width: min(50vw, 600px);
-    margin: 50px auto;
-  }
-  input[type="number"] {
-    width: 50px;
-  }
-  canvas {
-    width: min(50vw, 600px);
-    height: 300px;
-    box-shadow: 0 0 5px lightgray;
-    margin: 20px 0;
-  }
-</style>
+<head>
+  <meta name="viewport" content="initial-scale=1, user-scalable=no" />
+  <style>
+    body {
+      user-select: none;
+      max-width: 600px;
+      padding: 40px;
+      margin: auto;
+      overflow-x: hidden;
+    }
 
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-<script
-  id="MathJax-script"
-  async
-  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
-></script>
+    input[type="number"] {
+      width: 50px;
+      margin-right: 10px;
+    }
 
-<h1>Structure and Interpretation of User Interfaces: The Tao of Illusions</h1>
+    label {
+      font-family: sans-serif;
+      color: gray;
+      font-size: 0.75em;
+    }
 
-<h2>0. Raster</h2>
-<em>Implementation:</em>
-<pre>
-function putPixel(image, x, y, color) {
-  const { data, width, height } = image;
-  if (x < 0 || x >= width || y < 0 || y >= height) return;
-  const [r, g, b, a] = round(scale(color, 255));
-  data[(y * width + x) * 4] = r;
-  data[(y * width + x) * 4 + 1] = g;
-  data[(y * width + x) * 4 + 2] = b;
-  data[(y * width + x) * 4 + 3] = a;
+    input[type="file"] {
+      width: 200px;
+    }
+
+    pre {
+      overflow: scroll;
+    }
+
+    canvas {
+      width: 100%;
+      height: 300px;
+      box-shadow: 0 0 5px lightgray;
+      margin: 20px 0;
+    }
+  </style>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script
+    async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+  ></script>
+</head>
+
+<body>
+  <h1>
+    <em>
+      Structure and Interpretation of User Interfaces: The Tao of Illusion</em
+    >
+  </h1>
+
+  <div style="position: relative">
+    <canvas id="raster"></canvas>
+    <pre id="pointer-xy"></pre>
+  </div>
+  <script type="module" src="./demo/raster.js"></script>
+
+  <p>
+    In this day and age, user interfaces are as mundane a concept as light
+    switches, door knobs and water faucets. We interact with the windows and
+    button as if they are the same kind of natural, physical objects, despite
+    understanding perfectly well that they are just a grid of pixels on a flat
+    screen shifting colors over time. Such "user illusions" are an essential
+    part of the human experience: We all <em>know</em> that we are made up of
+    the same kinds of particles that make up stars and galaxies, and yet it's
+    impossible to actually <em>see</em> ourselves this way, because of our
+    deeply &mdash; perhaps biologically &mdash; ingrained belief of our spirit
+    and soul.
+  </p>
+  <p>
+    It's frustrating how inadequately people are educated about systems that are
+    designed and engineered by ourselves. Ask a well educated person and they
+    could probably give you a general picture of the natural world: from how
+    different parts of the brain works to the orbits of electrons. The same
+    cannot be said for computing systems as simple as user interfaces -- even
+    people well educated in computer science don't necessarily bother to
+    understand the nitty-gritty of it.
+  </p>
+
+  <p>
+    In a traditional computer science curriculum, you learn about the basics of
+    computer architecture and operating systems, about processes and threads,
+    and perhaps the thing that underlies user interfaces: the event loop, which
+    is simply this:
+  </p>
+
+  <blockquote>
+    <pre>
+  while !quit {
+    if event = poll() {
+      handle(event)
+    }
+    if dirty { 
+      draw()
+    }
+  }
+    </pre>
+  </blockquote>
+  <p>
+    If you have ever wondered how user interfaces work, you will eventually
+    discover plenty of artcles about event loops on the Internet, but this is
+    only half of the magic. If we take the analogy between humans and user
+    interfaces even further, the event loop is sort of like the nervous system.
+    To qualify as a real person requires a fully developed brain, and the
+    spirits that dwells therein, and this will be the focus of this article: to
+    demonstrate some basic techniques to conjure up the spirits of user
+    interfaces that reside behind the sheet of pixels, using two spells that
+    complement each other:
+  </p>
+  <blockquote>
+    <pre>
+fn draw() {
+  for (x,y) in shape {
+    color(x, y)
+  }
 }
-</pre>
-<div>
-  <canvas id="raster"></canvas>
-</div>
-<div>
-  <code id="pointer-xy"></code>
-</div>
-<script type="module" src="./demo/raster.js"></script>
 
-<h2>1. Polygons</h2>
-
-<h3>1.1. Polygon Rasterization</h3>
-<em>Implementation:</em>
-<pre>
-function fillPolygon(image, vertices, color) {
-  const edges = [];
-
-  for (const i of vertices.keys()) {
-    let [x1, y1] = vertices[i];
-    let [x2, y2] = vertices[(i + 1) % vertices.length];
-    if (y1 == y2) continue;
-    if (y1 > y2) [x1, x2, y1, y2] = [x2, x1, y2, y1];
-    // [min-y, max-y, min-x, dx/dy]
-    edges.push([y1, y2, x1, (x2 - x1) / (y2 - y1)]);
-  }
-
-  if (!edges.length) return;
-
-  // sort primarily by min-y, secondarily by min-x
-  edges.sort((e1, e2) => (e1[0] == e2[0] ? e1[2] - e2[2] : e1[0] - e2[0]));
-
-  // scan-line fill
-  let y = Math.ceil(edges[0][0]) - 1;
-  let active = [];
-
-  do {
-    for (let i = 0; i < active.length; i += 2) {
-      for (let x = Math.ceil(active[i][1]); x < active[i + 1][1]; ++x) {
-        putPixel(image, x, y, color(x, y));
-      }
-    }
-
-    ++y;
-    active = active.filter(([minY]) => minY > y);
-    for (const edge of active) {
-      edge[1] += edge[2];
-    }
-    while (edges.length && edges[0][0] <= y) {
-      const [minY, maxY, minX, k] = edges.shift();
-      // [max-y, intersection-x, k]
-      active.push([maxY, minX + k * (y - minY), k]);
-    }
-    // sort by intersection-x
-    active.sort((e1, e2) => e1[1] - e2[1]);
-  } while (active.length || edges.length);
-}  
-</pre>
-
-<h3>1.2. Polygon Hit-test</h3>
-<p>
-  An "inverse" problem of rasterization is hit-testing: Given a pixel on screen,
-  can we infer which polygon it belongs to? We again employ the even-odd rule
-  that we used for rasterization, i.e. a point lies in the polygon if a ray
-  starting at the point intersects the polygon an odd number of times. To make
-  the computation simpler we can simply shoot the ray in the \(+x\) direction.
-</p>
-<em>Implementation:</em>
-<pre>
-function hitTest([x, y], vertices) {
-  let intersections = 0;
-  for (const i of vertices.keys()) {
-    let [x1, y1] = vertices[i];
-    let [x2, y2] = vertices[(i + 1) % vertices.length];
-    if (y1 > y2) [x1, x2, y1, y2] = [x2, x1, y2, y1];
-    if (y1 <= y && y2 > y) {
-      const intersectionX = x1 + ((x2 - x1) / (y2 - y1)) * (y - y1);
-      if (intersectionX > x) {
-        ++intersections;
-      }
-    }
-  }
-  return intersections & 1;
+fn handle(event) {
+  target = pick(event.x, event.y)
+  target.handle(e)
 }
-</pre>
-<div>
-  <canvas id="polygon"></canvas>
-</div>
-<div>
-  <button id="polygon-clear">clear</button>
-</div>
-<script type="module" src="./demo/polygon.js"></script>
+    </pre>
+  </blockquote>
 
-<h3>1.3. Linear Transformations</h3>
-<p>
-  To translate, rotate or scale a polygon, we can apply the transformation to
-  each individual vertex before rasterization. If we use homogeneous coordinates
-  \((x, y, 1)\) to represent a point \((x, y)\) in the 2D plane, these
-  transformations can be expressed nicely as \(3\times3\) matrices:
-</p>
-<ul>
-  <li>
-    Translation: $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
-    \end{pmatrix}$$
-  </li>
-  <li>
-    Rotation: $$R_\theta = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
-    \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}$$
-  </li>
-  <li>
-    Scaling: $$S_c = \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1
-    \end{pmatrix}$$
-  </li>
-</ul>
+  <h2><em>§1 - Polygons</em></h2>
+  <p>We all know how to draw a rectangle with a simple nested loop:</p>
+  <blockquote>
+    <pre>
+for y in y1...y2 {
+  for x in x1...x2 {
+    color(x, y)
+  }
+}
 
-<div>
+    </pre>
+  </blockquote>
+  <p>
+    This idea can be extended to arbitrary closed shapes, except the scan line
+    \(y = k\) could now <em>enter and leave the shape any number of times</em>.
+    Suppose the scan line crosses the boundary at x-coordinates \(x_1, x_2,
+    ...x_n\). We know \(n\) must be even, and all we need to do is to traverse
+    the odd-even intervals (from \(x_1\) to \(x_2\), from \(x_3\) to \(x_4\),
+    etc.):
+  </p>
+  <blockquote>
+    <pre>
+for y in y1...y2 {
+  for (x1, x2) in intervals(y) {
+    for x in x1...x2 {
+      color(x, y)
+    }
+  }
+}
+    </pre>
+  </blockquote>
+  <p>
+    The way we traverse the interior of the shape also tells us how we should
+    check if a integer point \((x,y)\) lies within it. If it is, \(x\) must be
+    in one of those intervals, and since we are in the middle of an interval,
+    <em>there must be odd number of intersection points on either side</em>
+    &mdash; this is all we need for a hit-test:
+  </p>
+  <blockquote>
+    <em>
+      Given a point \((x_p,y_p)\), count the number of intersections of scan
+      line \(y = y_p\) and the curve with a \(x\) coordinate greater than
+      \(x_p\). if the number is even, then the point is on the outside; if it is
+      odd, then the point is on the inside.
+    </em>
+  </blockquote>
+  <p>
+    Now the question is: How do we find such intersection points? Thing would be
+    a lot eaiser if we can replace the curve with am approximating polygon, in
+    which case we can narrow our focus on the edges that straddle the scan line
+    \(y\). Suppose an edge has two endpoints \((x_1,y_1)\) (inclusive) and
+    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection point
+    exists if and only if \(y_1 \leq y < y_2\), and we can easily compute the
+    intersection point: $$intersection=\left(x_1 +
+    \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right)$$ The slope of line segment
+    $$k=\frac{\Delta x}{\Delta y}=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how
+    much \(x\) changes when we increase \(y\) by \(1\). This is handy because
+    once we find the first intersection point \((x, y)\) we could easily get the
+    next one \((x+k, y+1)\), and we can do this incrementation until \(y \geq
+    y_2\) and they no longer intersect.
+  </p>
+
+  <p>Here is the scan-line rasterization algorithm:</p>
+  <blockquote>
+    <em
+      >We keep track of all currently intersecting edges, which gives us a list
+      of \((x_1,x_2)\) ranges to traverse through for the current \(y\). At the
+      end of each iteration we increment \(y\), discard those edges that no
+      longer intersect with the scan line, increment the remaining ones by \((k,
+      1)\), and add new edges that now intersect with the scan line for the
+      first time.</em
+    >
+  </blockquote>
+  <p>
+    Try clicking on the canvas below. It should draw a polygon from the points
+    you selected, and when you hover your mouse over the interior of the
+    polygon, it should turn to dark red.
+  </p>
+
+  <div>
+    <canvas id="polygon"></canvas>
+  </div>
+  <script type="module" src="./demo/polygon.js"></script>
+  <p>
+    We have now obtained the ability to draw any polygon on screen and test
+    whether the pointer hits the polygon &mdash; I claim that this is the very
+    essense of user interface!
+  </p>
+  <p>
+    The first thing we can do is to applying linear transformations to our
+    polygons. Since the polygon is defined by the vertices, the only thing we
+    need to do is to
+    <em>apply the same transformation to each vertex before rasterization</em>.
+    If we use homogeneous coordinates \((x, y, 1)\) to represent the point on
+    screen at \((x,y)\), translation, rotation and scaling effects can all be
+    expressed neatly as \(3\times3\) matrices: $$T(x,y) = \begin{pmatrix} 1 & 0
+    & x \\ 0 & 1 & y \\ 0 & 0 & 1 \end{pmatrix}, R(\theta) = \begin{pmatrix}
+    \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1
+    \end{pmatrix}, S(c) = \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1
+    \end{pmatrix}$$ Try dragging the square below to see these transforms in
+    action:
+  </p>
+
   <canvas id="transform"></canvas>
-</div>
-<script type="module" src="./demo/transform.js"></script>
+  <script type="module" src="./demo/transform.js"></script>
 
-<h3>1.4. Parametric Curves</h3>
-<p>
-  Polygons are interesting because we can approximate any curve with a polygon
-  by taking dicrete samples along the curve. If the number of samples is
-  sufficiently large such that each segment becomes subpixel, the polygon would
-  appear indistinguishable from the actual curve!
-</p>
-<p>
-  Using what we have leared so far, we can now draw many more interesting
-  shapes. For example, an elliptic arc from angle \(\phi_1\) to \(\phi_2\) on a
-  ellipse centered at \((x,y)\), with semi-major axis \(a\) and semi-minor axis
-  \(b\), and rotated by an angle \(\theta\), can be drawn as a polygon with \(N
-  + 1\) vertices: $$(x_i, y_i) = T_{(x, y)} \cdot R_\theta \cdot
-  \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 - \phi_1}{N}\right),
-  b\sin\left(\phi_1 + i\cdot\frac{\phi_2 - \phi_1}{N}\right)\right)$$
-</p>
-<em>Implementation</em>
-<pre>
-const vertices = [[cx, cy]];
-for (let i = 0; i <= n; ++i) {
-  vertices.push(
-    compose(
-      translate(cx, cy),
-      rotate(theta)
-    )([
-      a * Math.cos(phi1 + (i * (phi2 - phi1)) / n),
-      b * Math.sin(phi1 + (i * (phi2 - phi1)) / n),
-    ])
-  );
-}
-</pre>
-<div>
-  <canvas id="ellipse"></canvas>
-</div>
-<div>
-  <label>\(N\):</label>
-  <input id="ellipse-n" type="number" value="16" min="3" />
-  <label>\(a\):</label> <input id="ellipse-a" type="number" value="200" />
-  <label>\(b\):</label> <input id="ellipse-b" type="number" value="150" />
-  <label>\(\theta\):</label>
-  <input id="ellipse-theta" type="number" value="45" />
-  <label>\(\phi_1\):</label>
-  <input id="ellipse-phi-1" type="number" value="0" />
-  <label>\(\phi_2\):</label>
-  <input id="ellipse-phi-2" type="number" value="360" />
-</div>
-<script type="module" src="./demo/ellipse.js"></script>
+  <p>
+    Look what we can already create with nothing but nested loops and simple
+    algebra! What's more exciting is that polygons are in fact all we need to
+    draw any shape, whether it's smooth or not, by taking dicrete samples \(p_1,
+    p_2, ...p_N\) along the curve. The magic happens when the discretization
+    becomes so fine that the distances between two adjacent vertices are less
+    the size of a single pixel &mdash; if you have heard that video games are
+    made up of millions of tiny triangles, it's exactly the same idea.
+  </p>
+  <p>
+    Let's draw an elliptic arc to get a feel of this: Suppose we want an arc
+    from angle \(\phi_1\) to \(\phi_2\) on a ellipse with semi-major axis \(a\)
+    and semi-minor axis \(b\), centered at \((x,y)\), and rotated by an angle
+    \(\theta\). We can create a polyon with \(N + 1\) points from the curve,
+    using this formula: $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T(x, y) \cdot
+    R(\theta) \cdot \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 -
+    \phi_1}{N}\right), b\sin\left(\phi_1 + i\cdot\frac{\phi_2 -
+    \phi_1}{N}\right)\right)^\top$$
+  </p>
 
-<h2>2. Linear Interpolation</h2>
-To linearly interpolation between two values \(v_1\) and \(v_2\), and then we
-can simply compute \(f(t) = (1-t) \cdot v_1 + t \cdot v_2\), where \(t\) is a
-parameter than indicates progress.
-<em>Implementation</em>
-<pre>
-function interpolate(value1, value2, t) {
-  return add(scale(value1, 1 - t), scale(value2, t));
-}
-</pre>
+  <div>
+    <canvas id="ellipse"></canvas>
+  </div>
+  <div>
+    <label>\(N =\)</label>
+    <input id="ellipse-n" type="number" value="5" min="3" />
+    <label>\(a= \)</label> <input id="ellipse-a" type="number" value="200" />
+    <label>\(b =\)</label> <input id="ellipse-b" type="number" value="150" />
+    <label>\(\theta= \)</label>
+    <input id="ellipse-theta" type="number" value="45" />
+    <label>\(\phi_1 =\)</label>
+    <input id="ellipse-phi-1" type="number" value="0" />
+    <label>\(\phi_2 =\)</label>
+    <input id="ellipse-phi-2" type="number" value="360" />
+  </div>
+  <script type="module" src="./demo/ellipse.js"></script>
 
-<h3>2.4. Color Gradient</h3>
-<pre>
-function linearGradient(y, minY, maxY, color1, color2) {
-  return interpolate(color1, color2, (y - minY) / (maxY - minY));
-}
-function radialGradient(p, center, maxRadius, color1, color2) {
-  return interpolate(color1, color2, dist(p, center) / maxRadius);
-}
-</pre>
-<div>
+  <p>
+    Try increasing \(N\) and see how the curve smooths out. I should remind you
+    that we have used nothing but nested loops and some simple algebra! "But we
+    can't possibly describe all shapes with formulas, can we?", you might say,
+    "What about vector arts and fonts?"
+  </p>
+
+  <h2><em>§2 - Bézier Curves</em></h2>
+  <p>
+    So far we have colored everything black, which isn't terribly intersting.
+    One easy improvement we can make is to linearly interpolate between two
+    colors. To linearly interpolate two values \(v_1\) and \(v_2\) just means to
+    take take a weighted average $$interpolate(v_1, v_2, t) = (1-t) \cdot v_1 +
+    t \cdot v_2$$ where the parameter \(t \in [0,1]\) controls how far we are
+    from the starting point. It should be easy to see that as \(t\) goes from
+    \(0\) to \(1\), the interpolated value changes continuously from \(v_1\) to
+    \(v_2\). For color gradient, the parameter \(t\) is based on some sort of
+    distance (e.g. Euclidean). For example, the two types of gradients below are
+    computed as follows: $$LinearGradient(x,y) = interpolate\left(C_1, C_2,
+    \frac{y - y_{min}}{y_{max} - y_{min}}\right)$$ $$RadialGradient(x,y) =
+    interpolate\left(C_1, C_2, \frac{\sqrt{(x-x_o)^2 + (y-y_o)^2}}{r}\right)$$
+  </p>
+
   <canvas id="gradient"></canvas>
-</div>
-<div>
-  <input id="gradient-color-1" type="color" value="#CA639A" />
-  <input id="gradient-color-2" type="color" value="#3C989F" />
-</div>
-<script type="module" src="./demo/gradient.js"></script>
+  <div>
+    <input id="gradient-color-1" type="color" value="#eeeeee" />
+    <input id="gradient-color-2" type="color" value="#000000" />
+  </div>
+  <script type="module" src="./demo/gradient.js"></script>
 
-<h3>2.1. Bezier Curves</h3>
-<p>
-  One of the most common shapes you'll find in all user interfaces is the famous
-  Bezier curve, which is again based on linear interpolation!
-</p>
-<em>Implementation</em>
-<pre>
-function makeBezier(controlPoints) {
-  const vertices = [];
-  for (let t = 0; t <= 1; t += 1 / 64) {
-    const points = [...controlPoints];
-    while (points.length > 1) {
-      for (let i = 0; i < points.length - 1; ++i) {
-        const [x1, y1] = points[i];
-        const [x2, y2] = points[i + 1];
-        points[i] = [(1 - t) * x1 + t * x2, (1 - t) * y1 + t * y2];
-      }
-      points.length--;
-    }
-    vertices.push(points[0]);
-  }
-  return vertices;
-}
-</pre>
-<h4>Quadratic Bezier</h4>
-<div>
-  <canvas id="quadratic-bezier"></canvas>
-</div>
-<div>
-  <button id="clear-quadratic-bezier">clear</button>
-</div>
-<h4>Cubic Bezier</h4>
-<div>
-  <canvas id="cubic-bezier"></canvas>
-</div>
-<div>
-  <button id="clear-cubic-bezier">clear</button>
-</div>
-<script type="module" src="./demo/bezier.js"></script>
-
-<h3>2.3. Animation and Transition</h3>
-<div>
+  <p>
+    Just as interpolating colors using position as the parameter gives us color
+    gradients, interpolating positions using time as the paramter can gives us
+    smooth curves! This is the famous Bézier curve that we encounter in every
+    corner (literally) of user interfaces, which can be defined by an iterative
+    process: given control points \(p^{(0)}_0, p^{(0)}_1, \dots. p^{(0)}_n\), we
+    can find the point \(B(t)\) by the following process:
+  </p>
+  <blockquote>
+    <em
+      >In each iteration \(k \in [1, n]\), we compute for each \(i \in [0, n -
+      k]\), $$p^{(k)}_i = (1-t) \cdot p^{(k-1)}_i + t \cdot p^{(k-1)}_{i+1}$$
+      Finally, \(B(t) := p^{(n)}_0\)</em
+    >
+  </blockquote>
+  The idea of linearly interpolation should be straightforward: The point just
+  travels from the starting point to the ending point at a constant speed. For
+  higher-order Bézier curves, we just do this recursively: Quadratic Bézier is
+  the interpolation of interpolation of control points; cubic Bézier is the
+  interpolation of interpolation of interpolation of control points, etc. The
+  best way to understand this is to follow the iterative algorithm on paper and
+  trace out the curve it generates. You could also click on the canvas below to
+  generate a Bézier curve from any number of control points.
   <canvas id="animation"></canvas>
-</div>
-<div>
-  <input id="animation-color-1" type="color" value="#CA639A" />
-  <input id="animation-color-2" type="color" value="#3C989F" />
-  <input id="animation-duration" type="number" value="3" min="1" />
-  <button id="animation-start">start</button>
-  <button id="animation-clear">clear</button>
-</div>
-<script type="module" src="./demo/animation.js"></script>
+  <script type="module" src="./demo/animation.js"></script>
 
-<h3>2.2. Text</h3>
-<em>Implementation</em>
-<pre>
-function drawText(image, text, dx, dy, size, color) {
-  const vertices = [];
-  let x, y;
-
-  for (const path of font.getPaths(text, dx, dy, size)) {
-    for (const cmd of path.commands) {
-      switch (cmd.type) {
-        case "M":
-          x = cmd.x;
-          y = cmd.y;
-          break;
-        case "L":
-          vertices.push([x, y], [cmd.x, cmd.y]);
-          x = cmd.x;
-          y = cmd.y;
-          break;
-        case "Q":
-          vertices.push(
-            ...makeBezier(
-              [x, y],
-              [cmd.x1, cmd.y1],
-              [cmd.x, cmd.y],
-            )
-          );
-          x = cmd.x;
-          y = cmd.y;
-          break;
-        case "C":
-          vertices.push(
-            ...makeBezier(
-              [x, y],
-              [cmd.x1, cmd.y1],
-              [cmd.x2, cmd.y2],
-              [cmd.x, cmd.y],
-            )
-          );
-          x = cmd.x;
-          y = cmd.y;
-          break;
-        case "Z":
-          break;
-      }
-    }
-    fillPolygon(image, vertices, color);
-    vertices.length = 0;
-  }
-}
-</pre>
-<div>
+  <p>
+    You might have noticed some patterns: With quadratic Bézier, we could create
+    "C" curves, where \(p_1\) controls in which direction and how much the curve
+    bends; With cubic Bézier, we could not only create "C" curves with a greater
+    arc, but also "S" curves, if we place \(p_1\) and \(p_2\) on different sides
+    of the line connecting \(p_0\) and \(p_3\). Unfortunately, we don't have
+    such intuitive explanation for the role of each control point for
+    higher-order Bézier curves, so quadratic and cubic are the types that you
+    will see most of the time.
+  </p>
+  <p>
+    To rasterize a region enclosed by Bézier curves, we can apply the same trick
+    that we used for elliptic arcs &mdash; we just sample \(N\) points on the
+    curve at \(t = 0, 1/N, 2/N, \dots, 1\) and draw a polygon instead.
+  </p>
+  <p>
+    Try creating some Bézier shapes on the two canvases above. The first one
+    generates quadratic curves and second one generates cubic curves. (You need
+    to click twice in the first canvas and three times in the second one to
+    create each new curve.) Did those shapes remind you of something?
+  </p>
+  <canvas id="quadratic-bezier"></canvas>
+  <canvas id="cubic-bezier"></canvas>
+  <p>
+    Yes, every chracter you have read on this page &mdash; or on anything that
+    uses OpenType or TrueType fonts for that matter &mdash; is in fact made of
+    Bézier curves!
+  </p>
+  <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
-</div>
-<div>
-  <label>text:</label>
-  <input id="font-text" value="Hello, world!" />
-  <label>size:</label>
-  <input id="font-size" type="number" step="1" value="100" />
-</div>
-<script type="module" src="./demo/font.js"></script>
+  <div>
+    <label>font (OTF/TTF): </label>
+    <input id="font-file" type="file" accept=".otf,.ttf" />
+    <label>text </label>
+    <input id="font-text" value="Hello, world!" />
+    <label>size </label>
+    <input id="font-size" type="number" step="1" value="50" />
+  </div>
+  <script type="module" src="./demo/font.js"></script>
+  <p>
+    When you hover your mouse over the painted text, its color should change to
+    dark red &mdash; we are still drawing polygons! At this point maybe you
+    should take a moment take it in: You now know how to create a text box,
+    using nothing but nested loops &mdash;
+    <em>event loop, rasterization, Bézier interpolation</em> &mdash; and some
+    algebra! Isn't it magical? If you have read this far, congratulations! You
+    have almost ready to summon the spirit of user interfaces!
+  </p>
 
-<h2>4. Compositing and Composition</h2>
-<h3>4.1. Alpha Compositing</h3>
-<h3>4.2 Filters</h3>
-<pre>
-function putPixel(image, x, y, color) {
-  const { data, width, height } = image;
-  if (x < 0 || x >= width || y < 0 || y >= height) return;
-  const base = (y * width + x) * 4;
-  const [r2, g2, b2, a2] = scale([...data.slice(base, base + 4)], 1 / 255);
-  const [r1, g1, b1, a1] = color;
-  const a = a1 + a2 * (1 - a1);
-  const [r, g, b] = add(
-    scale([r1, g1, b1], a1 / a),
-    scale([r2, g2, b2], (a2 * (1 - a1)) / a)
-  );
-  data[base] = Math.round(r * 255);
-  data[base + 1] = Math.round(g * 255);
-  data[base + 2] = Math.round(b * 255);
-  data[base + 3] = Math.round(a * 255);
+  <h2><em>§3. Layers</em></h2>
+  <p>
+    Usually, objects on screen form a hierarchy: Shapes contain other shapes,
+    and when a containing shape moves, everthing inside moves with it, thus it's
+    convenient to represent the entire user interface as a tree structure. To
+    render the tree to screen we simply do a preoder traversal (or multiple
+    traversals). The reason that we use preorder is that the geometry of a
+    container determines the geometries of its descendants, and a container
+    needs to be drawn before its descendants because it lies underneath.
+  </p>
+  <blockquote>
+    <pre>
+fn layout(node) {
+  computeGeometry(node)
+  node.children.forEach(layout)
 }
-</pre>
-<h3>4.2. Recursion</h3>
-<p>
-  Imagine we are trying to draw a button, which has a green background, rounded
-  corners, a black shadow, and text in the center that says "button".
-</p>
-<pre>
-class UIRenderer {
-  pending = [];
-  committed = [];
-  
-  constructor(canvas, root) {
-    this.root = root;
-    this.root.render(this);
-    setup(
-      canvas,
-      (buffer) => {
-        if (this.pending.length) {
-          this.commit(buffer);
-        }
-      },
-      {
-        onClick: (p) => {
-          const comp = this.hitTest(p);
-          if (comp?.handleClick?.(p)) {
-            this.root.render(this);
-          }
-        },
-        onPointerDown: (p) => {
-          const comp = this.hitTest(p);
-          if (comp?.handlePointerDown?.(p)) {
-            this.root.render(this);
-          }
-        },
-        onPointerMove: (p) => {
-          const comp = this.hitTest(p);
-          if (comp?.handlePointerMove?.(p)) {
-            this.root.render(this);
-          }
-        },
-        onPointerUp: (p) => {
-          const comp = this.hitTest(p);
-          if (comp?.handlePointerUp?.(p)) {
-            this.root.render(this);
-          }
-        },
-      }
-    );
-  }
-  
-  hitTest(p) {
-    for (const { component, polygon } of this.committed) {
-      if (polygon.contains(p)) {
-        return component;
-      }
-    }
-  }
-  
-  render(component, polygon, color) {
-    this.pending.push({ component, polygon, color });
-  }
-  
-  commit(buffer) {
-    buffer.clear();
-    this.pending.forEach(({ polygon, color }) => {
-      polygon.fill(buffer, color);
-    });
-    this.committed = this.pending.reverse();
-    this.pending = [];
-  }
+
+fn draw(node) {
+  drawGeometry(node)
+  node.children.forEach(draw)
 }
-  
-</pre>
-<div>
-  <canvas id="recursion"></canvas>
-</div>
-<div>
-  <label>button height: </label>
-  <input id="button-height" type="number" min="100" max="200" />
-  <label>button width: </label>
-  <input id="button-width" type="number" min="120" max="500" />
-  <label>button border radius: </label>
-  <input id="button-radius" type="number" min="0" max="100" />
-</div>
-<script type="module" src="./demo/composition.js"></script>
+    </pre>
+  </blockquote>
+  <p>
+    For hit-testing, we need to determine the topmost polygon, i.e. the last
+    drawn polygon, that covers the pointer position. In order to achieve this we
+    must retain a record of the "draw calls" so that we can perform a search
+    <em>in reverse draw order</em>. The algorithm is straighforward:
+  </p>
+  <blockquote>
+    <em>
+      When drawing, record <code>(target, polygon)</code> pairs in the order
+      they were drawn. To detect a hit, search the list of
+      <code>(target, polygon)</code> pairs in reverse order for the target which
+      is responsible for the topmost polygon underneath the pointer.
+    </em>
+  </blockquote>
+  <div>
+    <canvas id="recursion"></canvas>
+  </div>
+  <div>
+    <label>height </label>
+    <input id="button-height" type="number" min="100" max="200" />
+    <label>width </label>
+    <input id="button-width" type="number" min="120" max="500" />
+    <label>border radius </label>
+    <input id="button-radius" type="number" min="0" max="100" />
+  </div>
+  <script type="module" src="./demo/composition.js"></script>
+
+  <p>
+    Look what we have achieved! These are basically the
+    <code>&lt;div/&gt;</code>'s and <code>&lt;button/&gt;</code>'s that you were
+    introduced to when you first learned about developing user interfaces, but
+    this time all built from pixels. Remember, all we have used are
+    <em
+      >an array of pixels, a tree of polygons, a list of commands, some basic
+      algebra and a bunch of nested loops</em
+    >!
+  </p>
+  <p>
+    There is one last thing: Patinting objects on top of each other seems
+    straightfoward, but what if there is some transparency? This is where the
+    alpha channel in RGBA comes in. One of the many ways to paint a color
+    \((r_1,g_1,b_1,a_1)\) on top of another color \((r_2,g_2,b_2,a_2)\) is to
+    use the "over" operator, which computes a weighted average of the RGB
+    channels of the two colors based on how much each color contributes to the
+    final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b) =
+    \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
+  </p>
+  <p>
+    How about the frosted glass, i.e. Gaussian blur, effect? This is produced by
+    a discrete convolution with a Gaussian filter. What the convolution does if
+    replacing each pixel with
+    <em>a weight average of a square neighborhood centered at the pixel</em>,
+    where the weight diminishes with distance, according to the 2D Gaussian
+    function: $$G(x,y) =
+    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right)$$ The
+    filter/convolution is defined as: $$Output(x,y) = \frac{1}{C}\sum_{u=-k}^{k}
+    \sum_{v=-k}^{k} G(u,v)Input(x-u, y-v)$$ $$C = \sum_{u=-k}^{k}
+    \sum_{v=-k}^{k}G(u,v)$$
+  </p>
+  <p>
+    The canvas below demonstrates alpha compositing and Gaussian blur. You can
+    drag the lens on the top left corner over the the text to see the blur
+    effect.
+  </p>
+  <canvas id="glass"></canvas>
+  <div>
+    <label>alpha </label>
+    <input id="alpha" type="number" min="0" max="1" value="0.2" step="0.01" />
+  </div>
+  <script type="module" src="./demo/glass.js"></script>
+</body>

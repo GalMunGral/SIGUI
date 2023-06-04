@@ -2,7 +2,6 @@ import { Color, setup } from "../modules/utils.js";
 import { Edge, Polygon } from "../modules/polygon.js";
 
 const canvas = document.querySelector("#polygon");
-const button = document.querySelector("#polygon-clear");
 
 const highlightColor = new Color(0.6, 0.0, 0.0);
 
@@ -11,12 +10,6 @@ let firstVertex;
 let lastVertex;
 let pointerInside = false;
 let dirty = false;
-
-button.onclick = () => {
-  edges.length = 0;
-  firstVertex = lastVertex = null;
-  dirty = true;
-};
 
 setup(
   canvas,

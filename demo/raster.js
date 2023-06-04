@@ -1,12 +1,16 @@
-import { Color, setup } from "../modules/utils.js";
+import { Color, Point, setup } from "../modules/utils.js";
 
 const canvas = document.querySelector("#raster");
 const textDisplay = document.querySelector("#pointer-xy");
 
 let rendered = false;
+let pointer = new Point(0, 0);
 setup(
   canvas,
-  (buffer) => {
+  (buffer, now) => {
+    textDisplay.textContent = `t=${(now / 1000).toFixed(
+      3
+    )} x=${pointer.x.toFixed(3)}, y=${pointer.y.toFixed(3)}`;
     if (!rendered) {
       rendered = true;
       for (let x = 0; x < buffer.width; ++x) {
@@ -21,8 +25,8 @@ setup(
     }
   },
   {
-    onPointerMove({ x, y }) {
-      textDisplay.textContent = `x=${x}, y=${y})`;
+    onPointerMove(p) {
+      pointer = p;
     },
   }
 );

@@ -43,6 +43,8 @@ export class Color {
   static WHITE = new Color(1, 1, 1);
   static BLACK = new Color(0, 0, 0);
   static RED = new Color(1, 0, 0);
+  static GREEN = new Color(0, 1, 0);
+  static BLUE = new Color(0, 0, 1);
   static TRANSPARENT = new Color(0, 0, 0, 0);
 
   static parse(s) {
@@ -118,7 +120,8 @@ export class Buffer {
   }
 
   clear() {
-    this.pixels.fill(Color.TRANSPARENT);
+    // this.pixels.fill(Color.TRANSPARENT);
+    this.pixels.fill(Color.WHITE);
     this.buffer.fill(0);
     this.dirty = true;
   }
@@ -162,10 +165,9 @@ export function setup(
     { threshold: 1 }
   ).observe(canvas);
 
-  requestAnimationFrame(function draw() {
-    // console.log(visible);
+  requestAnimationFrame(function draw(now) {
     if (visible) {
-      drawFn(buffer);
+      drawFn(buffer, now);
       if (buffer.dirty) {
         ctx.putImageData(imageData, 0, 0);
         buffer.dirty = false;

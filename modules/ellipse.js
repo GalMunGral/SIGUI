@@ -12,3 +12,12 @@ export function sampleEllipticArc(n, a, b, phi1, phi2) {
   }
   return res;
 }
+
+export function sampleCircle(n) {
+  const res = [];
+  for (let i = 0; i < n; ++i) {
+    const theta = i * ((2 * Math.PI) / n);
+    res.push(new Point(Math.cos(theta), Math.sin(theta)));
+  }
+  return res;
+}

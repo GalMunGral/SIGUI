@@ -2,7 +2,7 @@ import { simplePolygon } from "../modules/polygon.js";
 import { UIRenderer } from "../modules/ui.js";
 import { Color, Point } from "../modules/utils.js";
 import { sampleBezier } from "../modules/bezier.js";
-import { font, makeText } from "../modules/font.js";
+import { FontBook, makeText } from "../modules/font.js";
 
 const canvas = document.querySelector("#recursion");
 const buttonHeightInput = document.querySelector("#button-height");
@@ -55,8 +55,8 @@ class Box {
 
   render(renderer) {
     const color = this.active
-      ? new Color(0.9, 0.8, 0.8)
-      : new Color(0.9, 0.9, 0.9);
+      ? new Color(0.9, 0.85, 0.8)
+      : new Color(0.9, 0.9, 0.85);
     renderer.render(this, this.geometry, () => color);
 
     for (const child of this.buttons) {
@@ -67,8 +67,8 @@ class Box {
 
 class Button {
   static width = 400;
-  static height = 150;
-  static radius = 50;
+  static height = 120;
+  static radius = 60;
 
   active = false;
   hover = false;
@@ -138,7 +138,7 @@ class Button {
       .translate(centerX + offsetX, centerY + offsetY);
 
     const paddingX = 64;
-    const paddingY = 32;
+    const paddingY = 40;
 
     this.text.layout(
       centerX,
@@ -146,13 +146,6 @@ class Button {
       right - left - 2 * paddingX,
       bottom - top - 2 * paddingY
     );
-
-    this.blurGeometry = simplePolygon([
-      new Point(left + paddingX, top + paddingY),
-      new Point(right - paddingX, top + paddingY),
-      new Point(right - paddingX, bottom - paddingY),
-      new Point(left + paddingX, bottom - paddingY),
-    ]);
   }
 
   render(renderer) {
@@ -164,7 +157,7 @@ class Button {
       : new Color(15 / 255, 157 / 255, 88 / 255);
 
     if (this.blurEffect && !this.hover) {
-      renderer.blur(this.blurGeometry);
+      renderer.blur(this.geometry);
     }
 
     renderer.render(null, this.shadowGeometry, () => shadowColor);
@@ -184,7 +177,7 @@ class Text {
     let textWidth;
 
     while (fontSize > 0) {
-      const path = font.getPath(this.text, 0, 0, fontSize);
+      const path = FontBook.NotoSans.getPath(this.text, 0, 0, fontSize);
       const rect = path.getBoundingBox();
       textWidth = rect.x2 - rect.x1;
       if (textWidth < width) break;
@@ -195,7 +188,8 @@ class Text {
       this.text,
       centerX - textWidth / 2,
       centerY + fontSize / 4,
-      fontSize
+      fontSize,
+      FontBook.NotoSans
     );
   }
 
@@ -207,7 +201,7 @@ class Text {
 
 const UI = new UIRenderer(
   canvas,
-  new Box([new Button("I'm a button"), new Button("click me")])
+  new Box([new Button("User"), new Button("Interface")])
 );
 
 buttonWidthInput.value = Button.width;

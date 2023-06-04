@@ -3,11 +3,13 @@ import { sampleBezier } from "./bezier.js";
 import { Edge, Polygon } from "./polygon.js";
 import { Point } from "./utils.js";
 
-const data = await (await fetch("./NotoSans-Bold.ttf")).arrayBuffer();
+export const FontBook = {
+  NotoSans: parse(await (await fetch("./NotoSans.ttf")).arrayBuffer()),
+  NotoSerif: parse(await (await fetch("./NotoSerif.ttf")).arrayBuffer()),
+  Zapfino: parse(await (await fetch("./Zapfino.ttf")).arrayBuffer()),
+};
 
-export const font = parse(data);
-
-export function makeText(text, dx, dy, size) {
+export function makeText(text, dx, dy, size, font) {
   const edges = [];
   let start = null;
   let prev = null;

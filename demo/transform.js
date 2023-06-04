@@ -3,7 +3,7 @@ import { Edge, Polygon } from "../modules/polygon.js";
 
 const canvas = document.querySelector("#transform");
 
-const S = 50;
+const S = 20;
 const p1 = new Point(-S, -S);
 const p2 = new Point(S, -S);
 const p3 = new Point(S, S);
@@ -17,21 +17,25 @@ const square = new Polygon([
 
 let dx = 100;
 let dy = 100;
-let s = 1;
 let t = 0;
+
+let initial = true;
 let dragging = false;
 let prevPoint;
 
-let initial = true;
 setup(
   canvas,
   (buffer) => {
-    const transformed = square.rotate(t).scale(s).translate(dx, dy);
+    const transformed = square
+      .rotate(t)
+      .scale(1 + dx / 100)
+      .translate(dx, dy);
     if (initial) {
       initial = false;
       transformed.fill(buffer, () => Color.BLACK);
     }
     if (dragging) {
+      t += 0.1;
       buffer.clear();
       transformed.fill(buffer, () => Color.BLACK);
     }
@@ -42,12 +46,13 @@ setup(
         dx += p.x - prevPoint.x;
         dy += p.y - prevPoint.y;
         prevPoint = p;
-        t += 0.1;
-        s = 1 + 0.5 * Math.sin(t);
       }
     },
     onPointerDown(p) {
-      const boundary = square.rotate(t).scale(s).translate(dx, dy);
+      const boundary = square
+        .rotate(t)
+        .scale(1 + dx / 500)
+        .translate(dx, dy);
       if (boundary.contains(p)) {
         dragging = true;
         prevPoint = p;

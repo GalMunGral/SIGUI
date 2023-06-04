@@ -1,34 +1,41 @@
 import { Color } from "./utils.js";
 
-const normalization = 1 / 273;
-const kernelSize = 2;
-const gaussianKernel = [
-  [1, 4, 7, 4, 1],
-  [4, 16, 26, 16, 4],
-  [7, 26, 41, 26, 7],
-  [4, 16, 26, 16, 4],
-  [1, 4, 7, 4, 1],
+const gaussianKernel1D = [
+  0.00147945, 0.00380424, 0.00875346, 0.01802341, 0.03320773, 0.05475029,
+  0.08077532, 0.106639, 0.12597909, 0.133176, 0.12597909, 0.106639, 0.08077532,
+  0.05475029, 0.03320773, 0.01802341, 0.00875346, 0.00380424, 0.00147945,
 ];
 
+const k = gaussianKernel1D.length >> 1;
+
 export function blur(buffer, polygon) {
-  const pixels = buffer.pixels.slice();
-  function get(x, y) {
-    if (x < 0 || x >= buffer.width || y < 0 || y >= buffer.height) {
-      return Color.TRANSPARENT;
-    }
-    return pixels[y * buffer.width + x];
-  }
-  polygon.fill(buffer, (x, y) => {
+  const { width, height, pixels } = buffer;
+
+  const convolution1D = pixels.slice();
+
+  polygon.traverse((x, y) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
     let color = Color.TRANSPARENT;
-    for (let i = -kernelSize; i <= kernelSize; ++i) {
-      for (let j = -kernelSize; j <= kernelSize; ++j) {
+    for (let i = -k; i <= k; ++i) {
+      if (x + i >= 0 && x + i < width) {
         color = color.add(
-          get(x + i, y + j).scale(
-            gaussianKernel[kernelSize + i][kernelSize + j]
-          )
+          pixels[y * width + (x + i)].scale(gaussianKernel1D[k + i])
         );
       }
     }
-    return color.scale(normalization);
+    convolution1D[y * width + x] = color;
+  });
+
+  polygon.traverse((x, y) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
+    let color = Color.TRANSPARENT;
+    for (let i = -k; i <= k; ++i) {
+      if (y + i >= 0 && y + i < height) {
+        color = color.add(
+          convolution1D[(y + i) * width + x].scale(gaussianKernel1D[k + i])
+        );
+      }
+    }
+    buffer.putPixel(x, y, color);
   });
 }
