@@ -1,22 +1,28 @@
 import { Color, setup } from "../modules/utils.js";
 import { simplePolygon } from "../modules/polygon.js";
 import { sampleCircle } from "../modules/ellipse.js";
-import { blur } from "../modules/blur.js";
+import { blur, getGaussianKernel1D } from "../modules/blur.js";
 import { FontBook, makeText } from "../modules/font.js";
+import { loadBitmap, sampleBitmap } from "../modules/bitmap.js";
+
+const bitmap = await loadBitmap("monet.jpeg");
+const padding = 120;
 
 const canvas = document.querySelector("#glass");
 const alphaInput = document.querySelector("#alpha");
+const sigmaInput = document.querySelector("#sigma");
 
 const font = FontBook.NotoSerif;
 const text = "THE TAO OF ILLUSION";
 const fontSize = 80;
 const textWidth = font.getAdvanceWidth(text, fontSize);
 
-let alpha = 0.3;
+let alpha = +alphaInput.value;
+let kernel = getGaussianKernel1D(+sigmaInput.value);
 
-const S = 80;
+const S = 40;
 const circle = simplePolygon(sampleCircle(30)).scale(2 * S);
-const glass = simplePolygon(sampleCircle(30)).scale(100);
+const glass = simplePolygon(sampleCircle(30)).scale(80);
 let x = 0;
 let y = 0;
 
@@ -26,6 +32,11 @@ let prev;
 
 alphaInput.oninput = () => {
   alpha = +alphaInput.value;
+  dirty = true;
+};
+
+sigmaInput.oninput = () => {
+  kernel = getGaussianKernel1D(+sigmaInput.value);
   dirty = true;
 };
 
@@ -41,13 +52,19 @@ setup(
 
       buffer.clear();
 
-      makeText(
-        text,
-        buffer.width / 2 - textWidth / 2,
-        buffer.height / 2 + fontSize / 4,
-        fontSize,
-        font
-      ).fill(buffer, () => Color.BLACK);
+      for (let x = padding; x < buffer.width - padding; ++x) {
+        for (let y = padding; y < buffer.height - padding; ++y) {
+          buffer.putPixel(
+            x,
+            y,
+            sampleBitmap(
+              bitmap,
+              (x - padding) / (buffer.width - 2 * padding),
+              (y - padding) / (buffer.height - 2 * padding)
+            )
+          );
+        }
+      }
 
       circle
         .translate(
@@ -70,19 +87,23 @@ setup(
         )
         .fill(buffer, () => red);
 
+      makeText(
+        text,
+        buffer.width / 2 - textWidth / 2,
+        buffer.height / 2 + fontSize / 4,
+        fontSize,
+        font
+      ).fill(buffer, () => Color.WHITE);
+
       // frosted glass effect
-      const gray = new Color(0.7, 0.7, 0.7, alpha);
-      glass
-        .scale(1.1)
-        .translate(x, y)
-        .fill(buffer, () => gray);
+      const gray = new Color(0.7, 0.7, 0.7, 0.3);
       glass.translate(x, y).fill(buffer, () => gray);
-      blur(buffer, glass.translate(x, y));
+      blur(buffer, glass.translate(x, y), kernel);
     }
   },
   {
     onPointerDown(p) {
-      if (circle.translate(x, y).contains(p)) {
+      if (glass.translate(x, y).contains(p)) {
         dragging = true;
         prev = p;
       }

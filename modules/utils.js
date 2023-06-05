@@ -108,6 +108,18 @@ export class Buffer {
     );
   }
 
+  getPixel(x, y) {
+    if (x < 0 || x >= this.width || y < 0 || y >= this.height)
+      return Color.TRANSPARENT;
+    const i = y * this.width + x;
+    return new Color(
+      this.buffer[i * 4] / 255,
+      this.buffer[i * 4 + 1] / 255,
+      this.buffer[i * 4 + 2] / 255,
+      this.buffer[i * 4 + 3] / 255
+    );
+  }
+
   putPixel(x, y, color) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
     const i = y * this.width + x;

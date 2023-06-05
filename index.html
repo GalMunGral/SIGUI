@@ -203,9 +203,7 @@ for y in y1...y2 {
     polygon, it should turn to dark red.
   </p>
 
-  <div>
-    <canvas id="polygon"></canvas>
-  </div>
+  <canvas id="polygon"></canvas>
   <script type="module" src="./demo/polygon.js"></script>
   <p>
     We have now obtained the ability to draw any polygon on screen and test
@@ -462,7 +460,9 @@ fn draw(node) {
   <canvas id="glass"></canvas>
   <div>
     <label>alpha </label>
-    <input id="alpha" type="number" min="0" max="1" value="0.2" step="0.01" />
+    <input id="alpha" type="number" min="0" max="1" value="0.2" step="0.1" />
+    <label>sigma </label>
+    <input id="sigma" type="number" min="1" max="10" value="3" step="1" />
   </div>
   <script type="module" src="./demo/glass.js"></script>
 </body>

@@ -73,9 +73,8 @@ class Button {
   active = false;
   hover = false;
 
-  constructor(label, blurEffect = false) {
+  constructor(label) {
     this.text = new Text(label);
-    this.blurEffect = blurEffect;
   }
 
   handlePointerOver() {
@@ -155,10 +154,6 @@ class Button {
       : this.hover
       ? new Color(15 / 255, 177 / 255, 88 / 255)
       : new Color(15 / 255, 157 / 255, 88 / 255);
-
-    if (this.blurEffect && !this.hover) {
-      renderer.blur(this.geometry);
-    }
 
     renderer.render(null, this.shadowGeometry, () => shadowColor);
     renderer.render(this, this.geometry, () => backgroundColor);

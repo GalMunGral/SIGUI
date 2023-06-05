@@ -1,14 +1,22 @@
 import { Color } from "./utils.js";
 
-const gaussianKernel1D = [
-  0.00147945, 0.00380424, 0.00875346, 0.01802341, 0.03320773, 0.05475029,
-  0.08077532, 0.106639, 0.12597909, 0.133176, 0.12597909, 0.106639, 0.08077532,
-  0.05475029, 0.03320773, 0.01802341, 0.00875346, 0.00380424, 0.00147945,
-];
+export function getGaussianKernel1D(sigma) {
+  const k = 3 * sigma;
+  const res = [];
+  for (let x = -k; x <= k; ++x) {
+    res.push(
+      (1 / (sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * (x / sigma) ** 2)
+    );
+  }
+  const sum = res.reduce((s, w) => s + w);
+  for (let i = 0; i < res.length; ++i) {
+    res[i] /= sum;
+  }
+  return res;
+}
 
-const k = gaussianKernel1D.length >> 1;
-
-export function blur(buffer, polygon) {
+export function blur(buffer, polygon, kernel) {
+  const k = kernel.length >> 1;
   const { width, height, pixels } = buffer;
 
   const convolution1D = pixels.slice();
@@ -18,9 +26,7 @@ export function blur(buffer, polygon) {
     let color = Color.TRANSPARENT;
     for (let i = -k; i <= k; ++i) {
       if (x + i >= 0 && x + i < width) {
-        color = color.add(
-          pixels[y * width + (x + i)].scale(gaussianKernel1D[k + i])
-        );
+        color = color.add(pixels[y * width + (x + i)].scale(kernel[k + i]));
       }
     }
     convolution1D[y * width + x] = color;
@@ -32,7 +38,7 @@ export function blur(buffer, polygon) {
     for (let i = -k; i <= k; ++i) {
       if (y + i >= 0 && y + i < height) {
         color = color.add(
-          convolution1D[(y + i) * width + x].scale(gaussianKernel1D[k + i])
+          convolution1D[(y + i) * width + x].scale(kernel[k + i])
         );
       }
     }
