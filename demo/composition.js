@@ -1,6 +1,6 @@
 import { simplePolygon } from "../modules/polygon.js";
 import { UIRenderer } from "../modules/ui.js";
-import { Color, Point } from "../modules/utils.js";
+import { Color, Vec2 } from "../modules/utils.js";
 import { sampleBezier } from "../modules/bezier.js";
 import { FontBook, makeText } from "../modules/font.js";
 
@@ -39,10 +39,10 @@ class Box {
     const top = centerY - Box.height / 2;
     const bottom = centerY + Box.height / 2;
 
-    const p1 = new Point(left, top);
-    const p2 = new Point(right, top);
-    const p3 = new Point(right, bottom);
-    const p4 = new Point(left, bottom);
+    const p1 = new Vec2(left, top);
+    const p2 = new Vec2(right, top);
+    const p3 = new Vec2(right, bottom);
+    const p4 = new Vec2(left, bottom);
 
     this.geometry = simplePolygon([p1, p2, p3, p4]);
 
@@ -108,24 +108,24 @@ class Button {
 
     this.geometry = simplePolygon([
       ...sampleBezier([
-        new Point(left, top + radius),
-        new Point(left, top),
-        new Point(left + radius, top),
+        new Vec2(left, top + radius),
+        new Vec2(left, top),
+        new Vec2(left + radius, top),
       ]),
       ...sampleBezier([
-        new Point(right - radius, top),
-        new Point(right, top),
-        new Point(right, top + radius),
+        new Vec2(right - radius, top),
+        new Vec2(right, top),
+        new Vec2(right, top + radius),
       ]),
       ...sampleBezier([
-        new Point(right, bottom - radius),
-        new Point(right, bottom),
-        new Point(right - radius, bottom),
+        new Vec2(right, bottom - radius),
+        new Vec2(right, bottom),
+        new Vec2(right - radius, bottom),
       ]),
       ...sampleBezier([
-        new Point(left + radius, bottom),
-        new Point(left, bottom),
-        new Point(left, bottom - radius),
+        new Vec2(left + radius, bottom),
+        new Vec2(left, bottom),
+        new Vec2(left, bottom - radius),
       ]),
     ]);
 

@@ -1,4 +1,4 @@
-import { Color, Point, setup } from "../modules/utils.js";
+import { Color, Vec2, setup } from "../modules/utils.js";
 import { sampleEllipticArc } from "../modules/ellipse.js";
 import { Edge, Polygon } from "../modules/polygon.js";
 
@@ -13,7 +13,7 @@ const inputPhi2 = document.querySelector("#ellipse-phi-2");
 let dirty = true;
 
 function makeEllipse(n, a, b, cx, cy, theta, phi1, phi2) {
-  const center = new Point(0, 0);
+  const center = new Vec2(0, 0);
   const vertices = sampleEllipticArc(n, a, b, phi1, phi2);
 
   const edges = [];

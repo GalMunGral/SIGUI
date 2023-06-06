@@ -245,7 +245,8 @@ for y in y1...y2 {
     using this formula: $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T(x, y) \cdot
     R(\theta) \cdot \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 -
     \phi_1}{N}\right), b\sin\left(\phi_1 + i\cdot\frac{\phi_2 -
-    \phi_1}{N}\right)\right)^\top$$
+    \phi_1}{N}\right)\right)^\top$$ Try increasing \(N\) and see how the curve
+    smooths out.
   </p>
 
   <div>
@@ -253,24 +254,36 @@ for y in y1...y2 {
   </div>
   <div>
     <label>\(N =\)</label>
-    <input id="ellipse-n" type="number" value="5" min="3" />
-    <label>\(a= \)</label> <input id="ellipse-a" type="number" value="200" />
+    <input id="ellipse-n" type="number" value="15" min="3" />
+    <label>\(a= \)</label> <input id="ellipse-a" type="number" value="150" />
     <label>\(b =\)</label> <input id="ellipse-b" type="number" value="150" />
     <label>\(\theta= \)</label>
-    <input id="ellipse-theta" type="number" value="45" />
+    <input id="ellipse-theta" type="number" value="0" />
     <label>\(\phi_1 =\)</label>
-    <input id="ellipse-phi-1" type="number" value="0" />
+    <input id="ellipse-phi-1" type="number" value="15" />
     <label>\(\phi_2 =\)</label>
-    <input id="ellipse-phi-2" type="number" value="360" />
+    <input id="ellipse-phi-2" type="number" value="345" />
   </div>
   <script type="module" src="./demo/ellipse.js"></script>
 
   <p>
-    Try increasing \(N\) and see how the curve smooths out. I should remind you
-    that we have used nothing but nested loops and some simple algebra! "But we
-    can't possibly describe all shapes with formulas, can we?", you might say,
-    "What about vector arts and fonts?"
+    I didn't bing up ellipses for no reason. They can actually help us draw
+    polygonal chains, which, you might have guessed, is how we can approximate
+    (i.e. draw) smooth curves. We could have drawn them using line rasterization
+    algorithms, but if we want to add some thickness to the curves, we'll need
+    circles to connect lines segments, which are actually thin rectangles, with
+    smooth corners at the vertices. Try drawing a thick line below. Can you see
+    where the circles and rectangles are?
   </p>
+
+  <canvas id="curve"></canvas>
+  <div>
+    <label>line width </label>
+    <input id="line-width" type="number" min="1" value="4" />
+  </div>
+  <script type="module" src="demo/curve.js"></script>
+
+  <p></p>
 
   <h2><em>§2 - Bézier Curves</em></h2>
   <p>
@@ -334,16 +347,15 @@ for y in y1...y2 {
   <p>
     To rasterize a region enclosed by Bézier curves, we can apply the same trick
     that we used for elliptic arcs &mdash; we just sample \(N\) points on the
-    curve at \(t = 0, 1/N, 2/N, \dots, 1\) and draw a polygon instead.
-  </p>
-  <p>
-    Try creating some Bézier shapes on the two canvases above. The first one
-    generates quadratic curves and second one generates cubic curves. (You need
-    to click twice in the first canvas and three times in the second one to
-    create each new curve.) Did those shapes remind you of something?
+    curve at \(t = 0, 1/N, 2/N, \dots, 1\) and draw a polygon instead. Try
+    creating some Bézier shapes on the two canvases above. The first one
+    generates quadratic curves (you need to click twice to add a new "edge") and
+    second one generates cubic curves (you need to click three times to add a
+    new "edge"). Did those shapes remind you of something?
   </p>
   <canvas id="quadratic-bezier"></canvas>
   <canvas id="cubic-bezier"></canvas>
+
   <p>
     Yes, every chracter you have read on this page &mdash; or on anything that
     uses OpenType or TrueType fonts for that matter &mdash; is in fact made of
@@ -431,18 +443,26 @@ fn draw(node) {
     >!
   </p>
   <p>
-    There is one last thing: Patinting objects on top of each other seems
-    straightfoward, but what if there is some transparency? This is where the
-    alpha channel in RGBA comes in. One of the many ways to paint a color
-    \((r_1,g_1,b_1,a_1)\) on top of another color \((r_2,g_2,b_2,a_2)\) is to
-    use the "over" operator, which computes a weighted average of the RGB
-    channels of the two colors based on how much each color contributes to the
-    final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b) =
-    \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
+    Patinting objects on top of each other seems straightfoward, but what if
+    there is some transparency? This is where the alpha channel in RGBA comes
+    in. One of the many ways to paint a color \((r_1,g_1,b_1,a_1)\) on top of
+    another color \((r_2,g_2,b_2,a_2)\) is to use the "over" operator, which
+    computes a weighted average of the RGB channels of the two colors based on
+    how much each color contributes to the final alpha value: $$ a = a_1 + a_2
+    (1-a_1)$$ $$(r,g,b) = \frac{a_1}{a}(r_1,g_1,b_1) +
+    \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
+  <canvas id="alpha-compositing"></canvas>
+  <div>
+    <label>alpha </label>
+    <input id="alpha" type="number" min="0.1" max="1" value="0.2" step="0.1" />
+  </div>
+  <script type="module" src="./demo/alpha.js"></script>
+
   <p>
-    How about the frosted glass, i.e. Gaussian blur, effect? This is produced by
-    a discrete convolution with a Gaussian filter. What the convolution does if
+    To achive the frosted glass effect, we need more than just alpha
+    compositing. This blur effect (Gaussian blur) is the result of a discrete
+    convolution with a Gaussian filter/kernel. What the convolution does is
     replacing each pixel with
     <em>a weight average of a square neighborhood centered at the pixel</em>,
     where the weight diminishes with distance, according to the 2D Gaussian
@@ -457,12 +477,11 @@ fn draw(node) {
     drag the lens on the top left corner over the the text to see the blur
     effect.
   </p>
+
   <canvas id="glass"></canvas>
   <div>
-    <label>alpha </label>
-    <input id="alpha" type="number" min="0" max="1" value="0.2" step="0.1" />
     <label>sigma </label>
-    <input id="sigma" type="number" min="1" max="10" value="3" step="1" />
+    <input id="sigma" type="number" min="1" max="10" value="5" step="1" />
   </div>
   <script type="module" src="./demo/glass.js"></script>
 </body>

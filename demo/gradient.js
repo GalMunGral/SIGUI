@@ -1,5 +1,5 @@
 import { Edge, Polygon } from "../modules/polygon.js";
-import { Color, Point, setup } from "../modules/utils.js";
+import { Color, Vec2, setup } from "../modules/utils.js";
 import { linearGradient, radialGradient } from "../modules/gradient.js";
 
 const canvas = document.querySelector("#gradient");
@@ -11,10 +11,10 @@ let color2 = [0.0, 0.0, 0.0, 1.0];
 
 const S = 150;
 const margin = 50;
-const p1 = new Point(-S, -S);
-const p2 = new Point(+S, -S);
-const p3 = new Point(S, S);
-const p4 = new Point(-S, S);
+const p1 = new Vec2(-S, -S);
+const p2 = new Vec2(+S, -S);
+const p3 = new Vec2(S, S);
+const p4 = new Vec2(-S, S);
 
 const square = new Polygon([
   new Edge(p1, p2),
@@ -41,7 +41,7 @@ setup(canvas, (buffer) => {
     .fill(
       buffer,
       radialGradient(
-        new Point(centerX - 2 * S - margin, centerY - S),
+        new Vec2(centerX - 2 * S - margin, centerY - S),
         Math.sqrt(8) * S,
         color1,
         color2

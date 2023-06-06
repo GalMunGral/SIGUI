@@ -1,10 +1,10 @@
-import { Color, Point, setup } from "../modules/utils.js";
+import { Color, Vec2, setup } from "../modules/utils.js";
 
 const canvas = document.querySelector("#raster");
 const textDisplay = document.querySelector("#pointer-xy");
 
 let rendered = false;
-let pointer = new Point(0, 0);
+let pointer = new Vec2(0, 0);
 setup(
   canvas,
   (buffer, now) => {

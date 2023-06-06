@@ -42,6 +42,33 @@ class ActiveEdge {
   }
 }
 
+// TODO
+export class MultiPolygon {
+  constructor(polygons = []) {
+    this.polygons = polygons;
+  }
+
+  translate(dx, dy) {
+    return new MultiPolygon(this.polygons.map((p) => p.translate(dx, dy)));
+  }
+
+  rotate(theta) {
+    return new MultiPolygon(this.polygons.map((p) => p.rotate(theta)));
+  }
+
+  scale(c) {
+    return new MultiPolygon(this.polygons.map((p) => p.scale(c)));
+  }
+
+  contains(p) {
+    return this.polygons.some((polygon) => polygon.contains(p));
+  }
+
+  fill(buffer, color) {
+    this.polygons.forEach((p) => p.fill(buffer, color));
+  }
+}
+
 export class Polygon {
   _visibleEdges = null;
   constructor(edges = []) {

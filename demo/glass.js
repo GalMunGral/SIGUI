@@ -1,39 +1,34 @@
 import { Color, setup } from "../modules/utils.js";
 import { simplePolygon } from "../modules/polygon.js";
-import { sampleCircle } from "../modules/ellipse.js";
+import { makeRing, sampleCircle } from "../modules/ellipse.js";
 import { blur, getGaussianKernel1D } from "../modules/blur.js";
-import { FontBook, makeText } from "../modules/font.js";
+// import { FontBook, makeText } from "../modules/font.js";
 import { loadBitmap, sampleBitmap } from "../modules/bitmap.js";
 
 const bitmap = await loadBitmap("monet.jpeg");
-const padding = 120;
+const padding = 0;
 
 const canvas = document.querySelector("#glass");
-const alphaInput = document.querySelector("#alpha");
 const sigmaInput = document.querySelector("#sigma");
 
-const font = FontBook.NotoSerif;
-const text = "THE TAO OF ILLUSION";
-const fontSize = 80;
-const textWidth = font.getAdvanceWidth(text, fontSize);
+// const font = FontBook.NotoSerif;
+// const text = "THE TAO OF ILLUSION";
+// const fontSize = 80;
+// const textWidth = font.getAdvanceWidth(text, fontSize);
 
-let alpha = +alphaInput.value;
 let kernel = getGaussianKernel1D(+sigmaInput.value);
 
-const S = 40;
-const circle = simplePolygon(sampleCircle(30)).scale(2 * S);
-const glass = simplePolygon(sampleCircle(30)).scale(80);
+const lensSize = 80;
+const frameSize = 10;
+const glass = simplePolygon(sampleCircle(30)).scale(lensSize);
+const outline = makeRing(lensSize, lensSize + frameSize);
+
 let x = 0;
 let y = 0;
 
 let dirty = true;
 let dragging = false;
 let prev;
-
-alphaInput.oninput = () => {
-  alpha = +alphaInput.value;
-  dirty = true;
-};
 
 sigmaInput.oninput = () => {
   kernel = getGaussianKernel1D(+sigmaInput.value);
@@ -45,10 +40,6 @@ setup(
   (buffer) => {
     if (dirty) {
       dirty = false;
-
-      const red = new Color(1, 0, 0, alpha);
-      const green = new Color(0, 1, 0, alpha);
-      const blue = new Color(0, 0, 1, alpha);
 
       buffer.clear();
 
@@ -66,38 +57,19 @@ setup(
         }
       }
 
-      circle
-        .translate(
-          buffer.width / 2 + S,
-          buffer.height / 2 + S * (Math.sqrt(3) / 3)
-        )
-        .fill(buffer, () => blue);
-
-      circle
-        .translate(
-          buffer.width / 2 - S,
-          buffer.height / 2 + S * (Math.sqrt(3) / 3)
-        )
-        .fill(buffer, () => green);
-
-      circle
-        .translate(
-          buffer.width / 2,
-          buffer.height / 2 - S * ((Math.sqrt(3) * 2) / 3)
-        )
-        .fill(buffer, () => red);
-
-      makeText(
-        text,
-        buffer.width / 2 - textWidth / 2,
-        buffer.height / 2 + fontSize / 4,
-        fontSize,
-        font
-      ).fill(buffer, () => Color.WHITE);
+      // makeText(
+      //   text,
+      //   buffer.width / 2 - textWidth / 2,
+      //   buffer.height / 2 + fontSize / 4,
+      //   fontSize,
+      //   font
+      // ).fill(buffer, () => Color.WHITE);
 
       // frosted glass effect
-      const gray = new Color(0.7, 0.7, 0.7, 0.3);
-      glass.translate(x, y).fill(buffer, () => gray);
+      // const lensColor = new Color(0.7, 0.7, 0.7, 0.3);
+      const frameColor = new Color(0.9, 0.9, 0.9, 1);
+      outline.translate(x, y).fill(buffer, () => frameColor);
+      // glass.translate(x, y).fill(buffer, () => lensColor);
       blur(buffer, glass.translate(x, y), kernel);
     }
   },
@@ -119,5 +91,6 @@ setup(
         dirty = true;
       }
     },
-  }
+  },
+  1
 );

@@ -1,4 +1,4 @@
-export class Point {
+export class Vec2 {
   constructor(x, y) {
     if (isNaN(x) || isNaN(y)) {
       throw new Error("invalid coordinates!");
@@ -7,9 +7,30 @@ export class Point {
     this.y = y;
   }
 
+  norm() {
+    return Math.sqrt(this.x ** 2 + this.y ** 2);
+  }
+
+  add(other) {
+    return new Vec2(this.x + other.x, this.y + other.y);
+  }
+
+  sub(other) {
+    return new Vec2(this.x - other.x, this.y - other.y);
+  }
+
+  dot(other) {
+    return this.x * other.x + this.y * other.y;
+  }
+
+  cross(other) {
+    return this.x * other.y - this.y * other.x;
+  }
+
   normalize() {
-    const l = Math.sqrt(this.x ** 2 + this.y ** 2);
-    return this.scale(1 / l, 1 / l);
+    const n = this.norm();
+    if (n == 0) throw "Can't normalize zero vector!";
+    return this.scale(1 / n);
   }
 
   dist(other) {
@@ -17,22 +38,26 @@ export class Point {
   }
 
   translate(dx, dy) {
-    return new Point(this.x + dx, this.y + dy);
+    return new Vec2(this.x + dx, this.y + dy);
   }
 
   rotate(theta) {
-    return new Point(
+    return new Vec2(
       this.x * Math.cos(theta) - this.y * Math.sin(theta),
       this.x * Math.sin(theta) + this.y * Math.cos(theta)
     );
   }
 
+  mul(c) {
+    return new Vec2(this.x * c, this.y * c);
+  }
+
   scale(c) {
-    return new Point(this.x * c, this.y * c);
+    return new Vec2(this.x * c, this.y * c);
   }
 
   interpolate(other, t) {
-    return new Point(
+    return new Vec2(
       (1 - t) * this.x + t * other.x,
       (1 - t) * this.y + t * other.y
     );
@@ -142,9 +167,10 @@ export class Buffer {
 export function setup(
   canvas,
   drawFn,
-  { onClick, onPointerDown, onPointerUp, onPointerMove } = {}
+  { onClick, onPointerDown, onPointerUp, onPointerMove } = {},
+  dpr
 ) {
-  const dpr = devicePixelRatio;
+  dpr = dpr ?? devicePixelRatio;
   const width = (canvas.width = canvas.clientWidth * dpr);
   const height = (canvas.height = canvas.clientHeight * dpr);
 
@@ -152,19 +178,19 @@ export function setup(
   const imageData = new ImageData(width, height);
 
   canvas.addEventListener("pointerdown", (e) => {
-    onPointerDown?.(new Point(e.offsetX * dpr, e.offsetY * dpr));
+    onPointerDown?.(new Vec2(e.offsetX * dpr, e.offsetY * dpr));
   });
 
   canvas.addEventListener("pointerup", (e) => {
-    onPointerUp?.(new Point(e.offsetX * dpr, e.offsetY * dpr));
+    onPointerUp?.(new Vec2(e.offsetX * dpr, e.offsetY * dpr));
   });
 
   canvas.addEventListener("pointermove", (e) => {
-    onPointerMove?.(new Point(e.offsetX * dpr, e.offsetY * dpr));
+    onPointerMove?.(new Vec2(e.offsetX * dpr, e.offsetY * dpr));
   });
 
   canvas.addEventListener("click", (e) => {
-    onClick?.(new Point(e.offsetX * dpr, e.offsetY * dpr));
+    onClick?.(new Vec2(e.offsetX * dpr, e.offsetY * dpr));
   });
 
   const buffer = new Buffer(imageData);
