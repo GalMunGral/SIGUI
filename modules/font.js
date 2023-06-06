@@ -1,6 +1,6 @@
 import { parse } from "https://unpkg.com/opentype.js/dist/opentype.module.js";
 import { sampleBezier } from "./bezier.js";
-import { Edge, Polygon } from "./polygon.js";
+import { Edge, MultiPolygon, Polygon } from "./polygon.js";
 import { Vec2 } from "./utils.js";
 
 export const FontBook = {
@@ -10,11 +10,12 @@ export const FontBook = {
 };
 
 export function makeText(text, dx, dy, size, font) {
-  const edges = [];
+  const polygons = [];
   let start = null;
   let prev = null;
 
   for (const path of font.getPaths(text, dx, dy, size)) {
+    const edges = [];
     for (const cmd of path.commands) {
       switch (cmd.type) {
         case "M": {
@@ -57,7 +58,8 @@ export function makeText(text, dx, dy, size, font) {
           break;
         }
       }
+      polygons.push(new Polygon(edges));
     }
   }
-  return new Polygon(edges);
+  return new MultiPolygon(polygons);
 }
