@@ -4,17 +4,21 @@ export class Edge {
     this.p2 = p2;
   }
 
+  get reversed() {
+    return this.p1.y > this.p2.y;
+  }
+
   get x1() {
-    return this.p1.x;
+    return this.reversed ? this.p2.x : this.p1.x;
   }
   get y1() {
-    return this.p1.y;
+    return this.reversed ? this.p2.y : this.p1.y;
   }
   get x2() {
-    return this.p2.x;
+    return this.reversed ? this.p1.x : this.p2.x;
   }
   get y2() {
-    return this.p2.y;
+    return this.reversed ? this.p1.y : this.p2.y;
   }
 
   compare(other) {
@@ -35,10 +39,11 @@ export class Edge {
 }
 
 class ActiveEdge {
-  constructor(maxY, x, k) {
+  constructor(maxY, x, k, reversed) {
     this.maxY = maxY;
     this.x = x;
     this.k = k;
+    this.reversed = reversed;
   }
 }
 
@@ -78,7 +83,7 @@ export class Polygon {
   get visibleEdges() {
     if (!this._visibleEdges) {
       this._visibleEdges = this.edges
-        .map((e) => (e.y1 > e.y2 ? new Edge(e.p2, e.p1) : e))
+        // .map((e) => (e.y1 > e.y2 ? new Edge(e.p2, e.p1) : e))
         // ignore edges that don't cross any scan lines
         .filter(({ y1, y2 }) => Math.ceil(y1) < y2)
         .sort((e1, e2) => e1.compare(e2));
@@ -107,15 +112,17 @@ export class Polygon {
   }
 
   contains({ x, y }) {
-    let intersections = 0;
-    for (const { x1, y1, x2, y2 } of this.visibleEdges) {
+    let winding = 0;
+    for (const { x1, y1, x2, y2, reversed } of this.visibleEdges) {
       if (y1 > y) break;
       if (y2 <= y) continue;
       const k = (x2 - x1) / (y2 - y1);
       const z = x1 + k * (y - y1);
-      if (z > x) ++intersections;
+      if (z > x) {
+        winding += reversed ? -1 : 1;
+      }
     }
-    return intersections % 2 == 1;
+    return winding != 0;
   }
 
   fill(buffer, color) {
@@ -127,10 +134,13 @@ export class Polygon {
       if (active.length & 1) {
         throw "Odd number of intersections. The path is not closed!";
       }
-      for (let i = 0; i < active.length; i += 2) {
-        for (let x = Math.ceil(active[i].x); x < active[i + 1].x; ++x) {
-          buffer.putPixel(x, y, color(x, y));
+      for (let i = 0, winding = 0; i < active.length; ++i) {
+        if (winding) {
+          for (let x = Math.ceil(active[i - 1].x); x < active[i].x; ++x) {
+            buffer.putPixel(x, y, color(x, y));
+          }
         }
+        winding += active[i].reversed ? -1 : 1;
       }
       ++y;
       active = active.filter((e) => e.maxY > y);
@@ -138,9 +148,9 @@ export class Polygon {
         edge.x += edge.k;
       }
       while (i < this.visibleEdges.length && this.visibleEdges[i].y1 <= y) {
-        const { x1, y1, x2, y2 } = this.visibleEdges[i++];
+        const { x1, y1, x2, y2, reversed } = this.visibleEdges[i++];
         const k = (x2 - x1) / (y2 - y1);
-        active.push(new ActiveEdge(y2, x1 + k * (y - y1), k));
+        active.push(new ActiveEdge(y2, x1 + k * (y - y1), k, reversed));
       }
       active.sort((e1, e2) => e1.x - e2.x);
     } while (active.length || i < this.visibleEdges.length);
@@ -155,10 +165,13 @@ export class Polygon {
       if (active.length & 1) {
         throw "Odd number of intersections. The path is not closed!";
       }
-      for (let i = 0; i < active.length; i += 2) {
-        for (let x = Math.ceil(active[i].x); x < active[i + 1].x; ++x) {
-          fn(x, y);
+      for (let i = 0, winding = 0; i < active.length; ++i) {
+        if (winding) {
+          for (let x = Math.ceil(active[i - 1].x); x < active[i].x; ++x) {
+            fn(x, y);
+          }
         }
+        winding += active[i].reversed ? -1 : 1;
       }
       ++y;
       active = active.filter((e) => e.maxY > y);
@@ -166,9 +179,9 @@ export class Polygon {
         edge.x += edge.k;
       }
       while (i < this.visibleEdges.length && this.visibleEdges[i].y1 <= y) {
-        const { x1, y1, x2, y2 } = this.visibleEdges[i++];
+        const { x1, y1, x2, y2, reversed } = this.visibleEdges[i++];
         const k = (x2 - x1) / (y2 - y1);
-        active.push(new ActiveEdge(y2, x1 + k * (y - y1), k));
+        active.push(new ActiveEdge(y2, x1 + k * (y - y1), k, reversed));
       }
       active.sort((e1, e2) => e1.x - e2.x);
     } while (active.length || i < this.visibleEdges.length);

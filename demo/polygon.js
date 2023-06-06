@@ -18,7 +18,7 @@ setup(
       dirty = false;
       const closedEdges = [...edges];
       if (lastVertex) {
-        closedEdges.push(new Edge(firstVertex, lastVertex));
+        closedEdges.push(new Edge(lastVertex, firstVertex));
       }
       const polygon = new Polygon(closedEdges);
       buffer.clear();
@@ -41,7 +41,7 @@ setup(
       if (edges.length == 0) return;
       const polygon = new Polygon([
         ...edges,
-        new Edge(firstVertex, lastVertex),
+        new Edge(lastVertex, firstVertex),
       ]);
       if (polygon.contains(p) != pointerInside) {
         pointerInside = !pointerInside;

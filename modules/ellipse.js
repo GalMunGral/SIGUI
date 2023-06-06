@@ -34,8 +34,8 @@ export function makeRing(r1, r2, n = 30) {
     const theta2 = (i + 1) * ((2 * Math.PI) / n);
     edges.push(
       new Edge(
-        new Vec2(Math.cos(theta1), Math.sin(theta1)),
-        new Vec2(Math.cos(theta2), Math.sin(theta2))
+        new Vec2(Math.cos(theta2), Math.sin(theta2)),
+        new Vec2(Math.cos(theta1), Math.sin(theta1))
       ).scale(r1)
     );
     edges.push(

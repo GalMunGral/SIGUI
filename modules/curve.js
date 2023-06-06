@@ -1,17 +1,17 @@
 import { sampleCircle } from "./ellipse.js";
-import { MultiPolygon, simplePolygon } from "./polygon.js";
+import { Polygon, simplePolygon } from "./polygon.js";
 
 export function makeCurve(points, d, closed = false) {
-  if (points.length < 2) return new MultiPolygon();
+  if (points.length < 2) return new Polygon();
 
-  const polygons = [];
+  const edges = [];
 
   for (let i = 0; i < points.length; ++i) {
     const { x, y } = points[i];
-    polygons.push(
-      simplePolygon(sampleCircle(d * 4))
+    edges.push(
+      ...simplePolygon(sampleCircle(d * 4))
         .scale(d)
-        .translate(x, y)
+        .translate(x, y).edges
     );
   }
 
@@ -26,17 +26,19 @@ export function makeCurve(points, d, closed = false) {
       .normalize()
       .rotate(Math.PI / 2);
 
-    polygons.push(
-      simplePolygon([
+    edges.push(
+      ...simplePolygon([
         p1.add(e.mul(d)),
         p1.add(e.mul(-d)),
         p2.add(e.mul(-d)),
         p2.add(e.mul(d)),
-      ])
+      ]).edges
     );
   }
 
-  return new MultiPolygon(polygons);
+  console.log(edges);
+
+  return new Polygon(edges);
 
   // if (points.length < 2) return new Polygon();
   // const n = points.length;
