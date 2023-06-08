@@ -298,7 +298,8 @@ function triangulate(paths) {
         vertices[containing[i]].normalize().x >
           vertices[containing[visible]].normalize().x
       ) {
-        // visible = i;
+        // !!!!
+        visible = i;
       }
     }
     const n = vertices.length;
@@ -340,13 +341,17 @@ function triangulate(paths) {
     while (outerLoop.length > 3 && ears.length) {
       // console.log("ear length:", ears.length);
       let i = ears.pop();
-      console.log("i=", i, outerLoop.length);
-      console.log(
-        "triangel",
-        outerLoop[prev(outerLoop, i)],
-        outerLoop[i],
-        outerLoop[next(outerLoop, i)]
-      );
+      // console.log("i=", i, outerLoop.length);
+      if (triangles.length == 102) {
+        isEar(outerLoop, i);
+        console.log(
+          "triangle",
+          vertices[outerLoop[prev(outerLoop, i - 1)]],
+          vertices[outerLoop[prev(outerLoop, i)]],
+          vertices[outerLoop[i]],
+          vertices[outerLoop[next(outerLoop, i)]]
+        );
+      }
       triangles.push(
         outerLoop[prev(outerLoop, i)],
         outerLoop[i],
@@ -356,7 +361,7 @@ function triangulate(paths) {
       ears = ears
         .filter((x) => x != prev(outerLoop, i) && x != next(outerLoop, i))
         .map((x) => (x < i ? x : x - 1));
-      console.log([...ears]);
+      // console.log([...ears]);
 
       outerLoop.splice(i, 1);
       i %= outerLoop.length; // fix
@@ -405,7 +410,8 @@ function triangulate(paths) {
     const v = (d11 * d20 - d01 * d21) / denom;
     const w = (d00 * d21 - d01 * d20) / denom;
     const u = 1 - v - w;
-    return v > 0 && w > 0 && u > 0;
+    // FIX!!!!!!!
+    return v >= 0 && w >= 0 && u >= 0;
   }
 
   function isConvex(loop, i) {
@@ -514,11 +520,15 @@ window.onkeyup = (e) => {
     holes.push(points.length);
   } else if (e.key == "d") {
   }
-  const polygons = makeText(e.key, 10, 300, 150, FontBook.NotoSans, 4);
-  console.log(polygons);
-  for (let paths of polygons) {
-    drawPolygon(triangulate(paths));
-  }
+  let size = 1;
+  setInterval(() => {
+    console.log(size);
+    const polygons = makeText("Shift", 10, 300, size++, FontBook.NotoSerif, 4);
+    console.log(polygons);
+    for (let paths of polygons) {
+      drawPolygon(triangulate(paths));
+    }
+  }, 20);
 };
 
 canvas.onclick = (e) => {

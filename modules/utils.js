@@ -12,7 +12,10 @@ export class Vec2 {
   }
 
   equal(other) {
-    return this.x === other.x && this.y === other.y;
+    return (
+      Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y)) < 1e-20
+    );
+    // return this.x === other.x && this.y === other.y;
   }
 
   norm() {
