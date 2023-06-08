@@ -340,6 +340,11 @@ function triangulate(paths) {
     console.log("new loop");
     while (outerLoop.length > 3 && ears.length) {
       // console.log("ear length:", ears.length);
+
+      // let idx = Math.floor(Math.random() * ears.length);
+      // let i = ears[idx];
+      // ears.splice(idx, 1);
+
       let i = ears.pop();
       // console.log("i=", i, outerLoop.length);
       if (triangles.length == 102) {
@@ -503,7 +508,7 @@ function drawPolygon({ vertices, triangles, savedOuterLoops }) {
   //   gl.drawElements(gl.LINES, lines.length, gl.UNSIGNED_SHORT, 0);
   // });
   // gl.drawElements(gl.POINTS, triangles.length, gl.UNSIGNED_SHORT, 0);
-  gl.drawArrays(gl.POINTS, 0, vertices.length);
+  // gl.drawArrays(gl.POINTS, 0, vertices.length);
 }
 
 import { parse } from "https://unpkg.com/opentype.js/dist/opentype.module.js";
@@ -521,14 +526,14 @@ window.onkeyup = (e) => {
   } else if (e.key == "d") {
   }
   let size = 1;
-  setInterval(() => {
-    console.log(size);
-    const polygons = makeText("Shift", 10, 300, size++, FontBook.NotoSerif, 4);
-    console.log(polygons);
-    for (let paths of polygons) {
-      drawPolygon(triangulate(paths));
-    }
-  }, 20);
+  // setInterval(() => {
+  console.log(size);
+  const polygons = makeText(e.key, 50, 400, 200, FontBook.Zapfino, 4);
+  console.log(polygons);
+  for (let paths of polygons) {
+    drawPolygon(triangulate(paths));
+  }
+  // }, 100);
 };
 
 canvas.onclick = (e) => {
