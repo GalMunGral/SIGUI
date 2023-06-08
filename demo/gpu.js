@@ -75,7 +75,7 @@ void main() {
     pos.z,
     1.0
   );
-  gl_PointSize = 10.0;
+  gl_PointSize = 2.0;
 }
 `,
   gl.VERTEX_SHADER
@@ -170,22 +170,23 @@ const holes = [];
 
 function ccw(a, b, c) {
   // TODO: cross
-  return (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+  const res = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+  // console.log("ccw", a, b, c, res);
+  return res;
 }
 
 function isOuter(vertices) {
   const n = vertices.length;
-  let j = -1;
+  let j = 0;
   for (let i = 0; i < n; ++i) {
     if (
-      j < 0 ||
       vertices[i].x < vertices[j].x ||
       (vertices[i].x == vertices[j].x && vertices[i].y < vertices[j].y)
     ) {
       j = i;
     }
   }
-  if (j < 0) throw "impossible";
+  if (j < 0) throw "isOuter impossible";
   // y-axis is flipped, so the sign is the opposite
   return ccw(vertices[(j - 1 + n) % n], vertices[j], vertices[(j + 1) % n]) > 0;
 }
@@ -207,8 +208,6 @@ function triangulate(paths) {
       }
       outerLoops.push(loop);
     } else {
-      const n = vertices.length;
-      vertices.push(...path);
       const loop = [];
       for (let i = 0; i < path.length; ++i) {
         loop.push(n + i);
@@ -227,7 +226,13 @@ function triangulate(paths) {
     }
   }
 
-  console.log("inner:", [...innerLoops], "outer", [...outerLoops]);
+  // return { triangles: [], vertices };
+  console.log(
+    "inner:",
+    innerLoops.map((x) => [...x]),
+    "outer",
+    outerLoops.map((x) => [...x])
+  );
 
   // process inner loops
   // for (let j = 0; j < holes.length - 1; ++j) {
@@ -257,10 +262,16 @@ function triangulate(paths) {
     // console.log("inner", inner);
     const o = vertices[inner[0]];
 
+    console.log(
+      [...inner],
+      [...inner].map((x) => vertices[x].x)
+    );
+
     let minIntersectionX = Infinity;
     let closest = -1;
     let containing;
     for (const outerLoop of outerLoops) {
+      console.log("test outer loop");
       for (let i = 0; i < outerLoop.length; ++i) {
         const a = vertices[index(outerLoop, i)];
         const b = vertices[index(outerLoop, i + 1)];
@@ -275,65 +286,90 @@ function triangulate(paths) {
           }
         }
       }
+      console.log("closets", closest, minIntersectionX, containing);
     }
     if (closest < 0) throw "not possible";
     let visible = closest;
     const c = new Vec2(minIntersectionX, o.y);
+    const m = vertices[containing[closest]];
     for (let i = 0; i < containing.length; ++i) {
       if (
-        isInside(
-          o,
-          vertices[containing[closest]],
-          // vertices[outerLoop[index(closest + 1)]],
-          c,
-          vertices[containing[i]]
-        ) &&
+        isInside(o, m, c, vertices[containing[i]]) &&
         vertices[containing[i]].normalize().x >
           vertices[containing[visible]].normalize().x
       ) {
-        visible = i;
+        // visible = i;
       }
     }
     const n = vertices.length;
     // console.log(["before", ...outerLoop]);
-    vertices.push(o.clone(), vertices[containing[visible]].clone());
-    containing.splice(visible + 1, 0, ...inner, n, n + 1);
+    // vertices.push(o.clone(), vertices[containing[visible]].clone());
+    // containing.splice(visible + 1, 0, ...inner, n, n + 1);
+    containing.splice(visible + 1, 0, ...inner, inner[0], containing[visible]);
     // console.log(["after", ...outerLoop]);
   }
 
-  console.log("after processing", [...innerLoops], [...outerLoops]);
+  console.log(
+    "after processing",
+    innerLoops.map((x) => [...x]),
+    outerLoops.map((x) => [...x])
+  );
 
   const triangles = [];
-  return { vertices, triangles };
+  const savedOuterLoops = outerLoops.map((x) => [...x]);
+
+  function prev(loop, i) {
+    return (i - 1 + loop.length) % loop.length;
+  }
+
+  function next(loop, i) {
+    return (i + 1) % loop.length;
+  }
 
   for (const outerLoop of outerLoops) {
     // triangulate outside
+    // FIX::::!!!!!! ears must be indices!!!!!
     let ears = [];
-    for (const i of outerLoop) {
+    for (let i = 0; i < outerLoop.length; ++i) {
       if (isEar(outerLoop, i)) {
-        ears.push(index(outerLoop, i));
+        ears.push(i);
       }
     }
 
+    console.log("new loop");
     while (outerLoop.length > 3 && ears.length) {
       // console.log("ear length:", ears.length);
-      const cur = ears.pop();
-      const i = outerLoop.indexOf(cur);
-      const prev = index(outerLoop, i - 1);
-      const next = index(outerLoop, i + 1);
-      triangles.push(prev, cur, next);
-      outerLoop.splice(i, 1);
+      let i = ears.pop();
+      console.log("i=", i, outerLoop.length);
+      console.log(
+        "triangel",
+        outerLoop[prev(outerLoop, i)],
+        outerLoop[i],
+        outerLoop[next(outerLoop, i)]
+      );
+      triangles.push(
+        outerLoop[prev(outerLoop, i)],
+        outerLoop[i],
+        outerLoop[next(outerLoop, i)]
+      );
 
-      ears = ears.filter((x) => x != prev && x != next);
+      ears = ears
+        .filter((x) => x != prev(outerLoop, i) && x != next(outerLoop, i))
+        .map((x) => (x < i ? x : x - 1));
+      console.log([...ears]);
+
+      outerLoop.splice(i, 1);
+      i %= outerLoop.length; // fix
+
       if (isEar(outerLoop, i - 1)) {
         // console.log("prev is ear");
-        ears.push(prev);
+        ears.push(prev(outerLoop, i));
       } else {
         // console.log("prev is not an ear");
       }
       if (isEar(outerLoop, i)) {
         // console.log("next is ear");
-        ears.push(next);
+        ears.push(i);
       } else {
         // console.log("next is not ear");
       }
@@ -346,6 +382,8 @@ function triangulate(paths) {
     }
     console.log("outerloop.length", outerLoop.length);
   }
+
+  // return { vertices, triangles };
 
   function index(loop, i) {
     const n = loop.length;
@@ -413,10 +451,11 @@ function triangulate(paths) {
   return {
     vertices,
     triangles,
+    savedOuterLoops,
   };
 }
 
-function drawPolygon({ vertices, triangles }) {
+function drawPolygon({ vertices, triangles, savedOuterLoops }) {
   gl.uniform1f(gl.getUniformLocation(program, "viewportWidth"), canvas.width);
   gl.uniform1f(gl.getUniformLocation(program, "viewportHeight"), canvas.height);
   gl.bufferData(
@@ -433,6 +472,31 @@ function drawPolygon({ vertices, triangles }) {
     gl.STATIC_DRAW
   );
   // gl.drawElements(gl.TRIANGLES, triangles.length, gl.UNSIGNED_SHORT, 0);
+  const lines = [];
+  for (let i = 0; i < triangles.length; i += 3) {
+    lines.push(triangles[i], triangles[i + 1]);
+    lines.push(triangles[i + 1], triangles[i + 2]);
+    lines.push(triangles[i + 2], triangles[i]);
+  }
+  gl.bufferData(
+    gl.ELEMENT_ARRAY_BUFFER,
+    new Uint16Array(lines),
+    gl.STATIC_DRAW
+  );
+  gl.drawElements(gl.LINES, lines.length, gl.UNSIGNED_SHORT, 0);
+  // savedOuterLoops.forEach((loop) => {
+  //   const lines = [];
+  //   for (let i = 0; i < loop.length; ++i) {
+  //     lines.push(loop[i], loop[(i + 1) % loop.length]);
+  //   }
+  //   gl.bufferData(
+  //     gl.ELEMENT_ARRAY_BUFFER,
+  //     new Uint16Array(lines),
+  //     gl.STATIC_DRAW
+  //   );
+  //   gl.drawElements(gl.LINES, lines.length, gl.UNSIGNED_SHORT, 0);
+  // });
+  // gl.drawElements(gl.POINTS, triangles.length, gl.UNSIGNED_SHORT, 0);
   gl.drawArrays(gl.POINTS, 0, vertices.length);
 }
 
@@ -450,7 +514,7 @@ window.onkeyup = (e) => {
     holes.push(points.length);
   } else if (e.key == "d") {
   }
-  const polygons = makeText(e.key, 300, 300, 300, FontBook.NotoSans, 30);
+  const polygons = makeText(e.key, 10, 300, 150, FontBook.NotoSans, 4);
   console.log(polygons);
   for (let paths of polygons) {
     drawPolygon(triangulate(paths));
@@ -462,6 +526,7 @@ canvas.onclick = (e) => {
 };
 
 function dedupe(arr) {
+  console.log(arr);
   let j = 1;
   for (let i = 1; i < arr.length; ++i) {
     if (!arr[i].equal(arr[i - 1])) {
@@ -469,11 +534,12 @@ function dedupe(arr) {
     }
   }
   arr.length = j;
-  if (arr[j - 1] == arr[0]) arr.pop();
+  if (arr[j - 1].equal(arr[0])) arr.pop();
+  // console.log("dedupe", [...arr]);
   return arr;
 }
 
-export function makeText(text, dx, dy, size, font, r = 32) {
+export function makeText(text, dx, dy, size, font, r = 10) {
   const polygons = [];
   for (const path of font.getPaths(text, dx, dy, size)) {
     let start = null;
@@ -495,11 +561,9 @@ export function makeText(text, dx, dy, size, font, r = 32) {
         }
         case "Q": {
           currentPath.push(
-            ...dedupe(
-              sampleBezier(
-                [prev, new Vec2(cmd.x1, cmd.y1), new Vec2(cmd.x, cmd.y)],
-                r
-              )
+            ...sampleBezier(
+              [prev, new Vec2(cmd.x1, cmd.y1), new Vec2(cmd.x, cmd.y)],
+              r
             )
           );
           prev = new Vec2(cmd.x, cmd.y);
@@ -507,16 +571,14 @@ export function makeText(text, dx, dy, size, font, r = 32) {
         }
         case "C": {
           currentPath.push(
-            ...dedupe(
-              sampleBezier(
-                [
-                  prev,
-                  new Vec2(cmd.x1, cmd.y1),
-                  new Vec2(cmd.x2, cmd.y2),
-                  new Vec2(cmd.x, cmd.y),
-                ],
-                r
-              )
+            ...sampleBezier(
+              [
+                prev,
+                new Vec2(cmd.x1, cmd.y1),
+                new Vec2(cmd.x2, cmd.y2),
+                new Vec2(cmd.x, cmd.y),
+              ],
+              r
             )
           );
           prev = new Vec2(cmd.x, cmd.y);
