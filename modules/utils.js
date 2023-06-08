@@ -7,6 +7,14 @@ export class Vec2 {
     this.y = y;
   }
 
+  clone() {
+    return new Vec2(this.x, this.y);
+  }
+
+  equal(other) {
+    return this.x === other.x && this.y === other.y;
+  }
+
   norm() {
     return Math.sqrt(this.x ** 2 + this.y ** 2);
   }
