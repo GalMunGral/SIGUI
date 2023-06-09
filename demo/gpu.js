@@ -171,7 +171,6 @@ const holes = [];
 window.ccw = function ccw(a, b, c) {
   // TODO: cross
   const res = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
-  // console.log("ccw", a, b, c, res);
   return res;
 };
 
@@ -226,14 +225,6 @@ function triangulate(paths) {
     }
   }
 
-  // return { triangles: [], vertices };
-  // console.log(
-  //   "inner:",
-  //   innerLoops.map((x) => [...x]),
-  //   "outer",
-  //   outerLoops.map((x) => [...x])
-  // );
-
   // process inner loops
   // for (let j = 0; j < holes.length - 1; ++j) {
   //   const innerIndices = [];
@@ -253,30 +244,20 @@ function triangulate(paths) {
   //   innerLoops.push([...innerIndices.slice(k), ...innerIndices.slice(0, k)]);
   // }
   innerLoops.sort((a, b) => vertices[a[0]].x - vertices[b[0]].x);
-  // console.log("innerloops", innerLoops);
 
   // eliminate inner loops
   while (innerLoops.length) {
-    // console.log([...innerLoops], innerLoops[0]);
     const inner = innerLoops.pop();
-    // console.log("inner", inner);
     const o = vertices[inner[0]];
-
-    // console.log(
-    //   [...inner],
-    //   [...inner].map((x) => vertices[x].x)
-    // );
 
     let minIntersectionX = Infinity;
     let closest = -1;
     let containing;
     for (const outerLoop of outerLoops) {
-      // console.log("test outer loop");
       for (let i = 0; i < outerLoop.length; ++i) {
         const a = vertices[index(outerLoop, i)];
         const b = vertices[index(outerLoop, i + 1)];
         // clockwise
-        // console.log(a, b, o);
         if (a.y <= o.y && b.y >= o.y) {
           const intersectionX = a.x + ((b.x - a.x) / (b.y - a.y)) * (o.y - a.y);
           if (intersectionX > o.x && intersectionX < minIntersectionX) {
@@ -286,7 +267,6 @@ function triangulate(paths) {
           }
         }
       }
-      // console.log("closets", closest, minIntersectionX, containing);
     }
     if (closest < 0) throw "not possible";
     let visible = closest;
@@ -298,23 +278,14 @@ function triangulate(paths) {
         vertices[containing[i]].normalize().x >
           vertices[containing[visible]].normalize().x
       ) {
-        // !!!!
         visible = i;
       }
     }
     const n = vertices.length;
-    // console.log(["before", ...outerLoop]);
     // vertices.push(o.clone(), vertices[containing[visible]].clone());
     // containing.splice(visible + 1, 0, ...inner, n, n + 1);
     containing.splice(visible + 1, 0, ...inner, inner[0], containing[visible]);
-    // console.log(["after", ...outerLoop]);
   }
-
-  // console.log(
-  //   "after processing",
-  //   innerLoops.map((x) => [...x]),
-  //   outerLoops.map((x) => [...x])
-  // );
 
   const triangles = [];
   const savedOuterLoops = outerLoops.map((x) => [...x]);
@@ -331,7 +302,6 @@ function triangulate(paths) {
     window.debug = outerLoop;
     window.isEar = isEar;
     // triangulate outside
-    // FIX::::!!!!!! ears must be indices!!!!!
     let ears = [];
     for (let i = 0; i < outerLoop.length; ++i) {
       if (isEar(outerLoop, i)) {
@@ -339,27 +309,13 @@ function triangulate(paths) {
       }
     }
 
-    // console.log("new loop");
     while (outerLoop.length > 3 && ears.length) {
-      // console.log("ear length:", ears.length);
-
       let idx = Math.floor(Math.random() * ears.length);
       let i = ears[idx];
       ears.splice(idx, 1);
 
       // let i = ears.pop();
 
-      // console.log("i=", i, outerLoop.length);
-      if (triangles.length == 126) {
-        isEar(outerLoop, i);
-        // console.log(
-        //   "tototo triangle",
-        //   (window.a = vertices[outerLoop[prev(outerLoop, i - 1)]]),
-        //   (window.b = vertices[outerLoop[prev(outerLoop, i)]]),
-        //   (window.c = vertices[outerLoop[i]]),
-        //   (window.d = vertices[outerLoop[next(outerLoop, i)]])
-        // );
-      }
       triangles.push(
         outerLoop[prev(outerLoop, i)],
         outerLoop[i],
@@ -369,38 +325,22 @@ function triangulate(paths) {
       ears = ears
         .filter((x) => x != prev(outerLoop, i) && x != next(outerLoop, i))
         .map((x) => (x < i ? x : x - 1));
-      // console.log([...ears]);
 
       outerLoop.splice(i, 1);
       i %= outerLoop.length; // fix
 
       if (isEar(outerLoop, i - 1)) {
-        // console.log("prev is ear");
         ears.push(prev(outerLoop, i));
-      } else {
-        // console.log("prev is not an ear");
       }
       if (isEar(outerLoop, i)) {
-        // console.log("next is ear");
         ears.push(i);
-      } else {
-        // console.log("next is not ear");
       }
     }
-    //
-    // console.log("exit loop", [...outerLoop], outerLoop.length);
     if (outerLoop.length == 3) {
       triangles.push(...outerLoop);
       outerLoop.length = 0;
     }
-    // console.log(
-    //   "outerloop.length",
-    //   outerLoop.map((i) => vertices[i]),
-    //   outerLoop.length
-    // );
   }
-
-  // return { vertices, triangles };
 
   function index(loop, i) {
     const n = loop.length;
@@ -423,8 +363,7 @@ function triangulate(paths) {
     const v = (d11 * d20 - d01 * d21) / denom;
     const w = (d00 * d21 - d01 * d20) / denom;
     const u = 1 - v - w;
-    // console.log(v, w, u);
-    // FIX!!!!!!!
+    // FIX: floating point errors
     return v > -1e-9 && w >= -1e-9 && u >= -1e-9;
   }
 
@@ -435,7 +374,7 @@ function triangulate(paths) {
         vertices[index(loop, i)],
         vertices[index(loop, i + 1)]
       ) > 0
-    ); // FIx!!!!!!!! ,>=
+    ); // can't be zero
   }
 
   function isEar(loop, i) {
@@ -443,9 +382,7 @@ function triangulate(paths) {
     const cur = index(loop, i);
     const prev = index(loop, i - 1);
     const next = index(loop, i + 1);
-    // console.log("test", vertices[cur], vertices[prev], vertices[next]);
     for (let idx of loop) {
-      // console.log(idx);
       if (
         idx != cur &&
         idx != prev &&
@@ -454,19 +391,9 @@ function triangulate(paths) {
       ) {
         return false;
       }
-      // console.log(
-      //   "inside?",
-      //   isInside(vertices[prev], vertices[cur], vertices[next], vertices[idx])
-      // );
     }
     return true;
   }
-
-  // for (let i = 0; i + 3 <= vertices.length; i += 3) {
-  //   triangles.push(i);
-  //   triangles.push(i + 1);
-  //   triangles.push(i + 2);
-  // }
 
   return {
     vertices,
@@ -503,7 +430,6 @@ function drawPolygon({ vertices, triangles, savedOuterLoops }) {
   const lines = [];
   let length = triangles.length;
   // setInterval(() => {
-  // console.log(length);
   for (let i = 0; i < length; i += 3) {
     lines.push(triangles[i], triangles[i + 1]);
     lines.push(triangles[i + 1], triangles[i + 2]);
@@ -545,23 +471,20 @@ export const FontBook = {
 };
 
 canvas.onclick = () => {
-  console.log("hey");
   canvas.requestFullscreen();
   setInterval(() => {
     let size = 50;
     requestAnimationFrame(function test() {
       if (size > 2500) return;
-      // console.log(size);
       const polygons = makeText(
         "illusion",
         canvas.width / 2 - 2 * size,
         canvas.height / 2 + size / 4,
         size,
-        FontBook.Zapfino,
+        FontBook.NotoSans,
         1
       );
       size *= 1.02;
-      // console.log(polygons);
       for (let paths of polygons) {
         drawPolygon(triangulate(paths));
       }
@@ -582,7 +505,6 @@ window.onkeyup = (e) => {
 // };
 
 function dedupe(arr) {
-  // console.log(arr);
   let j = 1;
   for (let i = 1; i < arr.length; ++i) {
     if (!arr[i].equal(arr[i - 1])) {
@@ -591,7 +513,6 @@ function dedupe(arr) {
   }
   arr.length = j;
   if (arr[j - 1].equal(arr[0])) arr.pop();
-  // console.log("dedupe", [...arr]);
   return arr;
 }
 
