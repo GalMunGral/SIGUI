@@ -13,7 +13,7 @@ export class Vec2 {
 
   equal(other) {
     return (
-      Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y)) < 1e-20
+      Math.max(Math.abs(this.x - other.x), Math.abs(this.y - other.y)) < 1e-9
     );
     // return this.x === other.x && this.y === other.y;
   }

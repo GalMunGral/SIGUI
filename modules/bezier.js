@@ -1,5 +1,19 @@
 import { Vec2 } from "./utils.js";
 
+function boundingBox(points) {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (let { x, y } of points) {
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  }
+  return { minX, minY, maxY, maxX };
+}
+
 export function bezier(controlPoints, t) {
   const points = [...controlPoints];
   while (points.length > 1) {
@@ -15,6 +29,13 @@ export function bezier(controlPoints, t) {
 
 // TODO: fix oversampling
 export function sampleBezier(controlPoints, n = 10) {
+  const { minX, minY, maxX, maxY } = boundingBox(controlPoints);
+  n = Math.min(
+    4,
+    Math.floor(Math.max(Math.min((maxY - minY) / 2, (maxX - minX) / 2), 1))
+  );
+  // console.log(n);
+
   const res = [];
   for (let t = 0; t < 1; t += 1 / n) {
     res.push(bezier([...controlPoints], t));

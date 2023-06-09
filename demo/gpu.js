@@ -159,7 +159,7 @@ gl.texImage2D(
   border,
   srcFormat,
   srcType,
-  new Uint8Array([0, 0, 255, 255])
+  new Uint8Array([0, 255, 0, 255])
 );
 
 const indexBuffer = gl.createBuffer();
@@ -168,12 +168,12 @@ gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
 const points = [];
 const holes = [];
 
-function ccw(a, b, c) {
+window.ccw = function ccw(a, b, c) {
   // TODO: cross
   const res = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
   // console.log("ccw", a, b, c, res);
   return res;
-}
+};
 
 function isOuter(vertices) {
   const n = vertices.length;
@@ -227,12 +227,12 @@ function triangulate(paths) {
   }
 
   // return { triangles: [], vertices };
-  console.log(
-    "inner:",
-    innerLoops.map((x) => [...x]),
-    "outer",
-    outerLoops.map((x) => [...x])
-  );
+  // console.log(
+  //   "inner:",
+  //   innerLoops.map((x) => [...x]),
+  //   "outer",
+  //   outerLoops.map((x) => [...x])
+  // );
 
   // process inner loops
   // for (let j = 0; j < holes.length - 1; ++j) {
@@ -262,16 +262,16 @@ function triangulate(paths) {
     // console.log("inner", inner);
     const o = vertices[inner[0]];
 
-    console.log(
-      [...inner],
-      [...inner].map((x) => vertices[x].x)
-    );
+    // console.log(
+    //   [...inner],
+    //   [...inner].map((x) => vertices[x].x)
+    // );
 
     let minIntersectionX = Infinity;
     let closest = -1;
     let containing;
     for (const outerLoop of outerLoops) {
-      console.log("test outer loop");
+      // console.log("test outer loop");
       for (let i = 0; i < outerLoop.length; ++i) {
         const a = vertices[index(outerLoop, i)];
         const b = vertices[index(outerLoop, i + 1)];
@@ -286,7 +286,7 @@ function triangulate(paths) {
           }
         }
       }
-      console.log("closets", closest, minIntersectionX, containing);
+      // console.log("closets", closest, minIntersectionX, containing);
     }
     if (closest < 0) throw "not possible";
     let visible = closest;
@@ -310,11 +310,11 @@ function triangulate(paths) {
     // console.log(["after", ...outerLoop]);
   }
 
-  console.log(
-    "after processing",
-    innerLoops.map((x) => [...x]),
-    outerLoops.map((x) => [...x])
-  );
+  // console.log(
+  //   "after processing",
+  //   innerLoops.map((x) => [...x]),
+  //   outerLoops.map((x) => [...x])
+  // );
 
   const triangles = [];
   const savedOuterLoops = outerLoops.map((x) => [...x]);
@@ -328,6 +328,8 @@ function triangulate(paths) {
   }
 
   for (const outerLoop of outerLoops) {
+    window.debug = outerLoop;
+    window.isEar = isEar;
     // triangulate outside
     // FIX::::!!!!!! ears must be indices!!!!!
     let ears = [];
@@ -337,25 +339,26 @@ function triangulate(paths) {
       }
     }
 
-    console.log("new loop");
+    // console.log("new loop");
     while (outerLoop.length > 3 && ears.length) {
       // console.log("ear length:", ears.length);
 
-      // let idx = Math.floor(Math.random() * ears.length);
-      // let i = ears[idx];
-      // ears.splice(idx, 1);
+      let idx = Math.floor(Math.random() * ears.length);
+      let i = ears[idx];
+      ears.splice(idx, 1);
 
-      let i = ears.pop();
+      // let i = ears.pop();
+
       // console.log("i=", i, outerLoop.length);
-      if (triangles.length == 102) {
+      if (triangles.length == 126) {
         isEar(outerLoop, i);
-        console.log(
-          "triangle",
-          vertices[outerLoop[prev(outerLoop, i - 1)]],
-          vertices[outerLoop[prev(outerLoop, i)]],
-          vertices[outerLoop[i]],
-          vertices[outerLoop[next(outerLoop, i)]]
-        );
+        // console.log(
+        //   "tototo triangle",
+        //   (window.a = vertices[outerLoop[prev(outerLoop, i - 1)]]),
+        //   (window.b = vertices[outerLoop[prev(outerLoop, i)]]),
+        //   (window.c = vertices[outerLoop[i]]),
+        //   (window.d = vertices[outerLoop[next(outerLoop, i)]])
+        // );
       }
       triangles.push(
         outerLoop[prev(outerLoop, i)],
@@ -390,7 +393,11 @@ function triangulate(paths) {
       triangles.push(...outerLoop);
       outerLoop.length = 0;
     }
-    console.log("outerloop.length", outerLoop.length);
+    // console.log(
+    //   "outerloop.length",
+    //   outerLoop.map((i) => vertices[i]),
+    //   outerLoop.length
+    // );
   }
 
   // return { vertices, triangles };
@@ -402,6 +409,7 @@ function triangulate(paths) {
     return loop[i];
   }
 
+  window.isInside = isInside;
   function isInside(a, b, c, p) {
     const v0 = b.sub(a);
     const v1 = c.sub(a);
@@ -415,8 +423,9 @@ function triangulate(paths) {
     const v = (d11 * d20 - d01 * d21) / denom;
     const w = (d00 * d21 - d01 * d20) / denom;
     const u = 1 - v - w;
+    // console.log(v, w, u);
     // FIX!!!!!!!
-    return v >= 0 && w >= 0 && u >= 0;
+    return v > -1e-9 && w >= -1e-9 && u >= -1e-9;
   }
 
   function isConvex(loop, i) {
@@ -425,7 +434,7 @@ function triangulate(paths) {
         vertices[index(loop, i - 1)],
         vertices[index(loop, i)],
         vertices[index(loop, i + 1)]
-      ) >= 0
+      ) > 0
     ); // FIx!!!!!!!! ,>=
   }
 
@@ -466,6 +475,14 @@ function triangulate(paths) {
   };
 }
 
+canvas.onfullscreenchange = () => {
+  canvas.width = screen.width;
+  canvas.height = screen.height;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform1f(gl.getUniformLocation(program, "viewportWidth"), canvas.width);
+  gl.uniform1f(gl.getUniformLocation(program, "viewportHeight"), canvas.height);
+};
+
 function drawPolygon({ vertices, triangles, savedOuterLoops }) {
   gl.uniform1f(gl.getUniformLocation(program, "viewportWidth"), canvas.width);
   gl.uniform1f(gl.getUniformLocation(program, "viewportHeight"), canvas.height);
@@ -484,17 +501,25 @@ function drawPolygon({ vertices, triangles, savedOuterLoops }) {
   );
   // gl.drawElements(gl.TRIANGLES, triangles.length, gl.UNSIGNED_SHORT, 0);
   const lines = [];
-  for (let i = 0; i < triangles.length; i += 3) {
+  let length = triangles.length;
+  // setInterval(() => {
+  // console.log(length);
+  for (let i = 0; i < length; i += 3) {
     lines.push(triangles[i], triangles[i + 1]);
     lines.push(triangles[i + 1], triangles[i + 2]);
     lines.push(triangles[i + 2], triangles[i]);
   }
+  // length += 3;
   gl.bufferData(
     gl.ELEMENT_ARRAY_BUFFER,
     new Uint16Array(lines),
     gl.STATIC_DRAW
   );
+
+  gl.lineWidth(0.1);
   gl.drawElements(gl.LINES, lines.length, gl.UNSIGNED_SHORT, 0);
+  // gl.drawArrays(gl.POINTS, 0, vertices.length);
+  // }, 400);
   // savedOuterLoops.forEach((loop) => {
   //   const lines = [];
   //   for (let i = 0; i < loop.length; ++i) {
@@ -508,7 +533,6 @@ function drawPolygon({ vertices, triangles, savedOuterLoops }) {
   //   gl.drawElements(gl.LINES, lines.length, gl.UNSIGNED_SHORT, 0);
   // });
   // gl.drawElements(gl.POINTS, triangles.length, gl.UNSIGNED_SHORT, 0);
-  // gl.drawArrays(gl.POINTS, 0, vertices.length);
 }
 
 import { parse } from "https://unpkg.com/opentype.js/dist/opentype.module.js";
@@ -520,28 +544,45 @@ export const FontBook = {
   Zapfino: parse(await (await fetch("./Zapfino.ttf")).arrayBuffer()),
 };
 
+canvas.onclick = () => {
+  console.log("hey");
+  canvas.requestFullscreen();
+  setInterval(() => {
+    let size = 50;
+    requestAnimationFrame(function test() {
+      if (size > 2500) return;
+      // console.log(size);
+      const polygons = makeText(
+        "illusion",
+        canvas.width / 2 - 2 * size,
+        canvas.height / 2 + size / 4,
+        size,
+        FontBook.Zapfino,
+        1
+      );
+      size *= 1.02;
+      // console.log(polygons);
+      for (let paths of polygons) {
+        drawPolygon(triangulate(paths));
+      }
+      requestAnimationFrame(test);
+    });
+  }, 200);
+};
+
 window.onkeyup = (e) => {
   if (e.key == "i") {
     holes.push(points.length);
   } else if (e.key == "d") {
   }
-  let size = 1;
-  // setInterval(() => {
-  console.log(size);
-  const polygons = makeText(e.key, 50, 400, 200, FontBook.Zapfino, 4);
-  console.log(polygons);
-  for (let paths of polygons) {
-    drawPolygon(triangulate(paths));
-  }
-  // }, 100);
 };
 
-canvas.onclick = (e) => {
-  points.push(new Vec2(e.offsetX, e.offsetY));
-};
+// canvas.onclick = (e) => {
+//   points.push(new Vec2(e.offsetX, e.offsetY));
+// };
 
 function dedupe(arr) {
-  console.log(arr);
+  // console.log(arr);
   let j = 1;
   for (let i = 1; i < arr.length; ++i) {
     if (!arr[i].equal(arr[i - 1])) {
@@ -554,7 +595,7 @@ function dedupe(arr) {
   return arr;
 }
 
-export function makeText(text, dx, dy, size, font, r = 10) {
+export function makeText(text, dx, dy, size, font, r = 64) {
   const polygons = [];
   for (const path of font.getPaths(text, dx, dy, size)) {
     let start = null;
