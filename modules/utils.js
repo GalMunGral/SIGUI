@@ -139,9 +139,20 @@ export class Buffer {
     this.buffer = imageData.data;
     this.width = imageData.width;
     this.height = imageData.height;
-    this.pixels = new Array(imageData.width * imageData.height).fill(
-      Color.TRANSPARENT
+  }
+
+  clone() {
+    return new Buffer(
+      new ImageData(this.buffer.slice(), this.width, this.height)
     );
+  }
+
+  composite(buf) {
+    for (let x = 0; x < this.width; ++x) {
+      for (let y = 0; y < this.height; ++y) {
+        this.putPixel(x, y, buf.getPixel(x, y));
+      }
+    }
   }
 
   getPixel(x, y) {
@@ -159,7 +170,10 @@ export class Buffer {
   putPixel(x, y, color) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
     const i = y * this.width + x;
-    const { r, g, b, a } = (this.pixels[i] = color.over(this.pixels[i]));
+    const prev = new Color(
+      ...Array.from(this.buffer.slice(i * 4, (i + 1) * 4)).map((v) => v / 255)
+    );
+    const { r, g, b, a } = color.over(prev);
     this.buffer[i * 4] = r * 255;
     this.buffer[i * 4 + 1] = g * 255;
     this.buffer[i * 4 + 2] = b * 255;
@@ -168,8 +182,6 @@ export class Buffer {
   }
 
   clear() {
-    // this.pixels.fill(Color.TRANSPARENT);
-    this.pixels.fill(Color.WHITE);
     this.buffer.fill(0);
     this.dirty = true;
   }

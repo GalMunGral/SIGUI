@@ -17,19 +17,19 @@ export function getGaussianKernel1D(sigma) {
 
 export function blur(buffer, polygon, kernel) {
   const k = kernel.length >> 1;
-  const { width, height, pixels } = buffer;
+  const { width, height } = buffer;
 
-  const convolution1D = pixels.slice();
+  const convolution1D = buffer.clone();
 
   polygon.traverse((x, y) => {
     if (x < 0 || x >= width || y < 0 || y >= height) return;
     let color = Color.TRANSPARENT;
     for (let i = -k; i <= k; ++i) {
       if (x + i >= 0 && x + i < width) {
-        color = color.add(pixels[y * width + (x + i)].scale(kernel[k + i]));
+        color = color.add(buffer.getPixel(x + i, y).scale(kernel[k + i]));
       }
     }
-    convolution1D[y * width + x] = color;
+    convolution1D.putPixel(x, y, color);
   });
 
   polygon.traverse((x, y) => {
@@ -38,7 +38,7 @@ export function blur(buffer, polygon, kernel) {
     for (let i = -k; i <= k; ++i) {
       if (y + i >= 0 && y + i < height) {
         color = color.add(
-          convolution1D[(y + i) * width + x].scale(kernel[k + i])
+          convolution1D.getPixel(x, y + i).scale(kernel[k + i])
         );
       }
     }

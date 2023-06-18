@@ -36,8 +36,6 @@ export function makeCurve(points, d, closed = false) {
     );
   }
 
-  console.log(edges);
-
   return new Polygon(edges);
 
   // if (points.length < 2) return new Polygon();
