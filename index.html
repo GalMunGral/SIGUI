@@ -9,6 +9,10 @@
       overflow-x: hidden;
     }
 
+    h1 {
+      font-family: sans-serif;
+    }
+
     input[type="number"] {
       width: 50px;
       margin-right: 10px;
@@ -45,9 +49,10 @@
 </head>
 
 <body>
-  <h1>
-    <em> The Tao of Illusion</em>
-  </h1>
+  <h1>The Tao of Illusion (<code>Rough Draft</code>)</h1>
+  <h2>
+    <em>Structure and Interpretation of Graphical User Interfaces</em>
+  </h2>
 
   <div style="position: relative">
     <canvas id="raster"></canvas>
@@ -56,27 +61,21 @@
   <script type="module" src="./demo/raster.js"></script>
 
   <p>
-    What is the essense of (graphical) user interface? This is the question I've
-    been trying to answer for quite a while, and the answer has always been
-    elusive. Just recently, I was finally able to connect the dots. So I'll
-    share my explanation and hopefully this could help people who seek the same
-    enlightenment.
-  </p>
-  <p>
-    It's frustrating how inadequately people are educated about systems that are
-    designed and engineered by ourselves. Ask a well educated person and they
-    could probably give you a general picture of the natural world: from how
-    different parts of the brain works to the orbits of electrons. The same
-    cannot be said for computing systems as simple as user interfaces -- even
-    people well educated in computer science don't necessarily bother to
-    understand the nitty-gritty of it.
+    It's quite frustrating how inadequately we are educated about systems that
+    are designed and engineered by ourselves. Probably most people can give you
+    a general picture of the natural world: from different parts of the brain to
+    electrons and protons. The same cannot be said for computational systems as
+    simple as graphical user interfaces -- even people well versed in software
+    don't necessarily understand the nitty-gritty of it. What is the essence of
+    graphical user interfaces? This question has been on my mind for many years,
+    and only recently have I been able to connect the dots. Here I'll share my
+    explanation in hopes that it may enlighten those who seek the same
+    understanding.
   </p>
 
   <p>
-    In a traditional computer science curriculum, you learn about the basics of
-    computer architecture and operating systems, about processes and threads,
-    and perhaps the thing that underlies user interfaces: the event loop, which
-    is simply this:
+    First things first, each user interface is driven by an event loop, which is
+    simply this:
   </p>
 
   <blockquote>
@@ -92,15 +91,8 @@
     </pre>
   </blockquote>
   <p>
-    If you have ever wondered how user interfaces work, you will eventually
-    discover plenty of artcles about event loops on the Internet, but this is
-    only half of the magic. If we take the analogy between humans and user
-    interfaces even further, the event loop is sort of like the nervous system.
-    To qualify as a real person requires a fully developed brain, and the
-    spirits that dwells therein, and this will be the focus of this article: to
-    demonstrate some basic techniques to conjure up the spirits of user
-    interfaces that reside behind the sheet of pixels, using two spells that
-    complement each other:
+    Within the loop are two spells that conjure the phantoms of interactive
+    objects residing behind the sheet of pixels:
   </p>
   <blockquote>
     <pre>
@@ -130,12 +122,12 @@ for y in y1...y2 {
     </pre>
   </blockquote>
   <p>
-    This idea can be extended to arbitrary closed shapes, except the scan line
-    \(y = k\) could now <em>enter and leave the shape any number of times</em>.
-    Suppose the scan line crosses the boundary at x-coordinates \(x_1, x_2,
-    ...x_n\). We know \(n\) must be even, and all we need to do is to traverse
-    the odd-even intervals (from \(x_1\) to \(x_2\), from \(x_3\) to \(x_4\),
-    etc.):
+    This idea can be extended to arbitrary closed shapes, except that the scan
+    line \(y = k\) could now
+    <em>enter and leave the shape any number of times</em>. Suppose the scan
+    line crosses the boundary at x-coordinates \(x_1, x_2, ...x_n\). We know
+    \(n\) must be even, and all we need to do is to traverse the odd-even
+    intervals (from \(x_1\) to \(x_2\), from \(x_3\) to \(x_4\), etc.):
   </p>
   <blockquote>
     <pre>
@@ -164,19 +156,19 @@ for y in y1...y2 {
     </em>
   </blockquote>
   <p>
-    Now the question is: How do we find such intersection points? Thing would be
-    a lot eaiser if we can replace the curve with am approximating polygon, in
-    which case we can narrow our focus on the edges that straddle the scan line
-    \(y\). Suppose an edge has two endpoints \((x_1,y_1)\) (inclusive) and
+    Now the question is: How do we find such intersection points? Things would
+    be a lot eaiser if we can replace the curve with am approximating polygon,
+    in which case we can narrow our focus on the edges that straddle the scan
+    line \(y\). Suppose an edge has two endpoints \((x_1,y_1)\) (inclusive) and
     \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection point
     exists if and only if \(y_1 \leq y < y_2\), and we can easily compute the
     intersection point: $$intersection=\left(x_1 +
     \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right)$$ The slope of line segment
     $$k=\frac{\Delta x}{\Delta y}=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how
     much \(x\) changes when we increase \(y\) by \(1\). This is handy because
-    once we find the first intersection point \((x, y)\) we could easily get the
-    next one \((x+k, y+1)\), and we can do this incrementation until \(y \geq
-    y_2\) and they no longer intersect.
+    once we find the first intersection point \((x, y)\), we could easily get
+    the next one \((x+k, y+1)\), and we can do this incrementation until \(y
+    \geq y_2\), which means they no longer intersect.
   </p>
 
   <p>Here is the scan-line rasterization algorithm:</p>
@@ -191,17 +183,17 @@ for y in y1...y2 {
     >
   </blockquote>
   <p>
-    Try clicking on the canvas below. It should draw a polygon from the points
-    you selected, and when you hover your mouse over the interior of the
-    polygon, it should turn to dark red.
+    Try clicking on the canvas below. It will draw a polygon from the points you
+    selected, and when you hover your mouse over the interior of the polygon, it
+    will turn dark red.
   </p>
 
   <canvas id="polygon"></canvas>
   <script type="module" src="./demo/polygon.js"></script>
   <p>
     We have now obtained the ability to draw any polygon on screen and test
-    whether the pointer hits the polygon &mdash; I claim that this is the very
-    essense of user interface!
+    whether the pointer hits the polygon &mdash; Congratulations! You have just
+    unveiled the mystery of graphical user interfaces!
   </p>
   <p>
     The first thing we can do is to applying linear transformations to our
@@ -226,9 +218,8 @@ for y in y1...y2 {
     algebra! What's more exciting is that polygons are in fact all we need to
     draw any shape, whether it's smooth or not, by taking dicrete samples \(p_1,
     p_2, ...p_N\) along the curve. The magic happens when the discretization
-    becomes so fine that the distances between two adjacent vertices are less
-    the size of a single pixel &mdash; if you have heard that video games are
-    made up of millions of tiny triangles, it's exactly the same idea.
+    becomes so fine-grained that the distances between adjacent vertices become
+    subpixel.
   </p>
   <p>
     Let's draw an elliptic arc to get a feel of this: Suppose we want an arc
@@ -260,13 +251,10 @@ for y in y1...y2 {
   <script type="module" src="./demo/ellipse.js"></script>
 
   <p>
-    I didn't bing up ellipses for no reason. They can actually help us draw
-    polygonal chains, which, you might have guessed, is how we can approximate
-    (i.e. draw) smooth curves. We could have drawn them using line rasterization
-    algorithms, but if we want to add some thickness to the curves, we'll need
-    circles to connect lines segments, which are actually thin rectangles, with
-    smooth corners at the vertices. Try drawing a thick line below. Can you see
-    where the circles and rectangles are?
+    Ellipses are interesting because they actually help us draw thick curves,
+    which can be approximated by a sequence of skinny rectangles connected using
+    circles as "elbows". Try drawing a curve below. Can you see where the
+    circles and rectangles are?
   </p>
 
   <canvas id="curve"></canvas>
@@ -280,13 +268,13 @@ for y in y1...y2 {
 
   <h2><em>§2 - Bézier Curves</em></h2>
   <p>
-    So far we have colored everything black, which isn't terribly intersting.
-    One easy improvement we can make is to linearly interpolate between two
-    colors. To linearly interpolate two values \(v_1\) and \(v_2\) just means to
-    take take a weighted average $$interpolate(v_1, v_2, t) = (1-t) \cdot v_1 +
-    t \cdot v_2$$ where the parameter \(t \in [0,1]\) controls how far we are
-    from the starting point. It should be easy to see that as \(t\) goes from
-    \(0\) to \(1\), the interpolated value changes continuously from \(v_1\) to
+    So far we have colored everything black, which isn't super intersting. One
+    easy improvement we can make is to linearly interpolate between two colors.
+    To linearly interpolate two values \(v_1\) and \(v_2\) just means to take
+    take a weighted average $$interpolate(v_1, v_2, t) = (1-t) \cdot v_1 + t
+    \cdot v_2$$ where the parameter \(t \in [0,1]\) controls how far we are from
+    the starting point. It should be easy to see that as \(t\) goes from \(0\)
+    to \(1\), the interpolated value changes continuously from \(v_1\) to
     \(v_2\). For color gradient, the parameter \(t\) is based on some sort of
     distance (e.g. Euclidean). For example, the two types of gradients below are
     computed as follows: $$LinearGradient(x,y) = interpolate\left(C_1, C_2,
@@ -304,10 +292,10 @@ for y in y1...y2 {
   <p>
     Just as interpolating colors using position as the parameter gives us color
     gradients, interpolating positions using time as the paramter can gives us
-    smooth curves! This is the famous Bézier curve that we encounter in every
-    corner (literally) of user interfaces, which can be defined by an iterative
-    process: given control points \(p^{(0)}_0, p^{(0)}_1, \dots. p^{(0)}_n\), we
-    can find the point \(B(t)\) by the following process:
+    smooth curves! This is the famous Bézier curve ubiquitous in user
+    interfaces. A Bézier curve can be defined by an iterative process: given
+    control points \(p^{(0)}_0, p^{(0)}_1, \dots. p^{(0)}_n\), we can find the
+    point \(B(t)\) by the following process:
   </p>
   <blockquote>
     <em
@@ -316,43 +304,54 @@ for y in y1...y2 {
       Finally, \(B(t) := p^{(n)}_0\)</em
     >
   </blockquote>
-  The idea of linearly interpolation should be straightforward: The point just
-  travels from the starting point to the ending point at a constant speed. For
-  higher-order Bézier curves, we just do this recursively: Quadratic Bézier is
-  the interpolation of interpolation of control points; cubic Bézier is the
-  interpolation of interpolation of interpolation of control points, etc. The
-  best way to understand this is to follow the iterative algorithm on paper and
-  trace out the curve it generates. You could also click on the canvas below to
-  generate a Bézier curve from any number of control points.
+  Linear Bézier curves are pretty straightforward: We are just traveling from
+  point A to point B at a constant speed. For higher-order Bézier curves, we
+  need to do this recursively: Quadratic Bézier is
+  <i>the interpolation of interpolation of</i> control points; cubic Bézier is
+  <i>the interpolation of interpolation of interpolation of</i> control points,
+  etc. The best way to understand this is to follow the iterative algorithm on
+  paper and trace out the curve it generates. You could also click on the canvas
+  below to generate a Bézier curve from any number of control points.
   <canvas id="animation"></canvas>
   <script type="module" src="./demo/animation.js"></script>
 
   <p>
     You might have noticed some patterns: With quadratic Bézier, we could create
-    "C" curves, where \(p_1\) controls in which direction and how much the curve
-    bends; With cubic Bézier, we could not only create "C" curves with a greater
-    arc, but also "S" curves, if we place \(p_1\) and \(p_2\) on different sides
-    of the line connecting \(p_0\) and \(p_3\). Unfortunately, we don't have
-    such intuitive explanation for the role of each control point for
-    higher-order Bézier curves, so quadratic and cubic are the types that you
-    will see most of the time.
+    "C"-shaped curves, where \(p_1\) controls in which direction and how much
+    the curve bends; With cubic Bézier, we could also create "S"-shaped curves
+    if we place \(p_1\) and \(p_2\) on different sides of the line connecting
+    \(p_0\) and \(p_3\). Unfortunately, we don't have such intuitive explanation
+    for the role of each control point for higher-order Bézier curves, so
+    quadratic and cubic are the types that you will see most of the time.
   </p>
   <p>
     To rasterize a region enclosed by Bézier curves, we can apply the same trick
     that we used for elliptic arcs &mdash; we just sample \(N\) points on the
     curve at \(t = 0, 1/N, 2/N, \dots, 1\) and draw a polygon instead. Try
-    creating some Bézier shapes on the two canvases above. The first one
-    generates quadratic curves (you need to click twice to add a new "edge") and
-    second one generates cubic curves (you need to click three times to add a
-    new "edge"). Did those shapes remind you of something?
+    making some Bézier shapes on the two canvases below.
   </p>
+  <ul>
+    <li>
+      The first one generates quadratic curves. You need to click twice to add a
+      new "edge".
+    </li>
+    <li>
+      The second one generates cubic curves. You need to click three times to
+      add a new "edge".
+    </li>
+  </ul>
   <canvas id="quadratic-bezier"></canvas>
   <canvas id="cubic-bezier"></canvas>
 
   <p>
-    Yes, every chracter you have read on this page &mdash; or on anything that
-    uses OpenType or TrueType fonts for that matter &mdash; is in fact made of
-    Bézier curves!
+    Do these shapes look familiar? Yes, every single character you have read on
+    this page &mdash; or, indeed, everything that uses OpenType or TrueType
+    fonts &mdash; is in fact made of Bézier curves (and straight lines, which
+    are really just linear Bézier curves)! Try hovering your mouse over the
+    painted text, and its color should change to dark red (<code
+      >TODO: current implementation is very slow</code
+    >) &mdash; because we are still drawing polygons using the exact same
+    algorithm!
   </p>
   <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
@@ -362,39 +361,42 @@ for y in y1...y2 {
     <label>text </label>
     <input id="font-text" value="Hello, world!" />
     <label>size </label>
-    <input id="font-size" type="number" step="1" value="50" />
+    <input id="font-size" type="number" step="1" value="120" />
   </div>
   <script type="module" src="./demo/font.js"></script>
   <p>
-    When you hover your mouse over the painted text, its color should change to
-    dark red &mdash; we are still drawing polygons! At this point maybe you
-    should take a moment take it in: You now know how to create a text box,
-    using nothing but nested loops &mdash;
-    <em>event loop, rasterization, Bézier interpolation</em> &mdash; and some
-    algebra! Isn't it magical? If you have read this far, congratulations! You
-    have almost ready to summon the spirit of user interfaces!
+    If you have read this far, congratulations! You are almost at the finish
+    line!
   </p>
 
   <h2><em>§3. Layers</em></h2>
   <p>
-    Usually, objects on screen form a hierarchy: Shapes contain other shapes,
-    and when a containing shape moves, everthing inside moves with it, thus it's
-    convenient to represent the entire user interface as a tree structure. To
-    render the tree to screen we simply do a preoder traversal (or multiple
-    traversals). The reason that we use preorder is that the geometry of a
-    container determines the geometries of its descendants, and a container
-    needs to be drawn before its descendants because it lies underneath.
+    Usually, objects on screen form a hierarchy: Shapes usually contain other
+    shapes. Moreover, when a containing shape moves, everthing inside moves with
+    it. Thus, it's convenient to represent the entire user interface as a
+    <it>tree</it> of shapes. To render the tree onto the screen we simple need
+    to perform a pre-order traversal, the reason being that a container,
+    assuming it lies beneath its descendants, needs to be drawn first. If we use
+    a layout system instead of explicitly specifying the coordinates or each
+    shape, we will need to perform a layout pass first.
   </p>
   <blockquote>
     <pre>
 fn layout(node) {
-  computeGeometry(node)
-  node.children.forEach(layout)
+  results = {}
+  computeGeometry(node, results)
+  for child in children {
+    result = layout(child)
+  }
+  computeGeometry(node, results)
+  return results
 }
 
 fn draw(node) {
   drawGeometry(node)
-  node.children.forEach(draw)
+  for child in children {
+    draw(child)
+  }
 }
     </pre>
   </blockquote>

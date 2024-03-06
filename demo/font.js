@@ -9,11 +9,17 @@ const fontInput = document.querySelector("#font-file");
 
 const highlightColor = new Color(0.6, 0.0, 0.0);
 
-let dirty = true;
-let font = FontBook.Zapfino;
+let font = FontBook.Arizonia;
 
-inputSize.oninput = inputText.oninput = () => {
+let dirty = true;
+let textChanged = true;
+
+inputSize.oninput = () => {
   dirty = true;
+};
+
+inputText.oninput = () => {
+  textChanged = true;
 };
 
 fontInput.oninput = async () => {
@@ -27,8 +33,8 @@ let pointerInside = false;
 setup(
   canvas,
   (buffer) => {
-    if (dirty) {
-      dirty = false;
+    if (textChanged) {
+      textChanged = false;
       textBoundary = makeText(
         inputText.value,
         100,
@@ -36,6 +42,9 @@ setup(
         +inputSize.value * devicePixelRatio,
         font
       );
+    }
+    if (dirty) {
+      dirty = false;
       buffer.clear();
       textBoundary.fill(buffer, () =>
         pointerInside ? highlightColor : Color.BLACK
