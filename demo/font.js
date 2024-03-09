@@ -12,14 +12,13 @@ const highlightColor = new Color(0.6, 0.0, 0.0);
 let font = FontBook.Arizonia;
 
 let dirty = true;
-let textChanged = true;
 
 inputSize.oninput = () => {
   dirty = true;
 };
 
 inputText.oninput = () => {
-  textChanged = true;
+  dirty = true;
 };
 
 fontInput.oninput = async () => {
@@ -27,36 +26,26 @@ fontInput.oninput = async () => {
   dirty = true;
 };
 
-let textBoundary;
 let pointerInside = false;
 
 setup(
   canvas,
   (buffer) => {
-    if (textChanged) {
-      textChanged = false;
-      textBoundary = makeText(
+    if (dirty) {
+      dirty = false;
+      buffer.clear();
+      const textBoundary = makeText(
         inputText.value,
         100,
         buffer.height / 2,
         +inputSize.value * devicePixelRatio,
         font
       );
-    }
-    if (dirty) {
-      dirty = false;
-      buffer.clear();
       textBoundary.fill(buffer, () =>
         pointerInside ? highlightColor : Color.BLACK
       );
     }
   },
-  {
-    onPointerMove(p) {
-      if (textBoundary && textBoundary.contains(p) != pointerInside) {
-        pointerInside = !pointerInside;
-        dirty = true;
-      }
-    },
-  }
+  {},
+  1.5
 );

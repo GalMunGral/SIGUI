@@ -361,7 +361,7 @@ for y in y1...y2 {
     <label>text </label>
     <input id="font-text" value="Hello, world!" />
     <label>size </label>
-    <input id="font-size" type="number" step="1" value="120" />
+    <input id="font-size" type="number" step="1" value="50" />
   </div>
   <script type="module" src="./demo/font.js"></script>
   <p>
@@ -382,14 +382,12 @@ for y in y1...y2 {
   </p>
   <blockquote>
     <pre>
-fn layout(node) {
-  results = {}
-  computeGeometry(node, results)
+fn layout(node, parent_constraints) {
+  constraints = add(parent_constraints, node.constraints)
   for child in children {
-    result = layout(child)
+    update(constraints, layout(child, constraints))
   }
-  computeGeometry(node, results)
-  return results
+  return calculateGeometry(constraints)
 }
 
 fn draw(node) {
