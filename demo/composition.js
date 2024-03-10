@@ -167,8 +167,8 @@ class Button {
     const backgroundColor = this.active
       ? new Color(0, 0.34, 0.6)
       : this.hover
-      ? new Color(0, 0.47, 0.74)
-      : new Color(0, 0.53, 0.82);
+      ? new Color(0, 0.53, 0.82)
+      : new Color(0, 0.47, 0.74);
 
     renderer.render(null, this.shadowGeometry, () => shadowColor);
     renderer.render(this, this.geometry, () => backgroundColor);
