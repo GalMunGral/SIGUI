@@ -193,17 +193,18 @@ for y in y1...y2 {
       and only if the number is odd.
     </em>
   </blockquote>
-  Now, how exactly do we find those intersection points? To answer the question,
-  we first need to approximate curves with polygons!
+  Now, how exactly do we find those intersection points? To answer the
+  question...
 
   <h2>Rasterization</h2>
 
   <p>
-    With polygons, we can just focus on the edges that straddle the horizontal
-    scan line. Suppose an edge has two endpoints \((x_1,y_1)\) (inclusive) and
-    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection point
-    exists if and only if \(y_1 \leq y < y_2\). We can easily obtain the
-    intersection point $$intersection=\left(x_1 +
+    ... we first need to approximate arbitrary curves with polygons. With
+    polygons, we can just focus on the straight edges that straddle the
+    horizontal scan line. Suppose an edge has two endpoints \((x_1,y_1)\)
+    (inclusive) and \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An
+    intersection point exists if and only if \(y_1 \leq y < y_2\). We can easily
+    obtain the intersection point $$intersection=\left(x_1 +
     \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The slope of line segment
     $$k=\frac{\Delta x}{\Delta y}=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how
     much \(x\) changes when we increment \(y\). Using the slope we can walk
@@ -227,7 +228,8 @@ for y in y1...y2 {
   </blockquote>
   <p>
     The canvas below will draw a polygon from the points you click on (you need
-    to pick at least 3). The polygon will be highlighted when you hover over it.
+    to pick at least 3) using this algorithm (implemented in JavaScript). The
+    polygon will be highlighted when you hover over it.
   </p>
 
   <canvas id="polygon"></canvas>
