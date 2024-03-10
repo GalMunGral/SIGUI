@@ -28,7 +28,7 @@ setup(
   (buffer) => {
     const transformed = square
       .rotate(t)
-      .scale(1 + dx / 100)
+      .scale(1 + dx / 500)
       .translate(dx, dy);
     if (initial) {
       initial = false;

@@ -10,13 +10,26 @@ const buttonWidthInput = document.querySelector("#button-width");
 const buttonRadiusInput = document.querySelector("#button-radius");
 
 class Box {
-  static width = 800;
-  static height = 500;
+  static width = 300;
+  static height = 200;
 
   active = false;
+  hover = false;
 
   constructor(buttons) {
     this.buttons = buttons;
+  }
+
+  handlePointerOver() {
+    console.log("yo");
+    this.hover = true;
+    return true;
+  }
+
+  handlePointerOut() {
+    this.hover = false;
+    this.active = false;
+    return true;
   }
 
   handlePointerDown() {
@@ -55,8 +68,10 @@ class Box {
 
   render(renderer) {
     const color = this.active
-      ? new Color(0.9, 0.85, 0.8)
-      : new Color(0.9, 0.9, 0.85);
+      ? new Color(0.9, 0.9, 0.9)
+      : this.hover
+      ? new Color(0.95, 0.95, 0.95)
+      : new Color(0.95, 0.95, 0.95);
     renderer.render(this, this.geometry, () => color);
 
     for (const child of this.buttons) {
@@ -66,9 +81,9 @@ class Box {
 }
 
 class Button {
-  static width = 400;
-  static height = 120;
-  static radius = 60;
+  static width = 180;
+  static height = 60;
+  static radius = 30;
 
   active = false;
   hover = false;
@@ -129,15 +144,15 @@ class Button {
       ]),
     ]);
 
-    const offsetX = 5;
-    const offsetY = 5;
+    const offsetX = 2;
+    const offsetY = 2;
 
     this.shadowGeometry = this.geometry
       .translate(-centerX, -centerY)
       .translate(centerX + offsetX, centerY + offsetY);
 
-    const paddingX = 64;
-    const paddingY = 40;
+    const paddingX = 20;
+    const paddingY = 20;
 
     this.text.layout(
       centerX,
@@ -148,12 +163,12 @@ class Button {
   }
 
   render(renderer) {
-    const shadowColor = new Color(0.3, 0.3, 0.3, 0.3);
+    const shadowColor = new Color(0.3, 0.3, 0.3, 0.5);
     const backgroundColor = this.active
-      ? new Color(15 / 255, 137 / 255, 88 / 255)
+      ? new Color(0, 0.34, 0.6)
       : this.hover
-      ? new Color(15 / 255, 177 / 255, 88 / 255)
-      : new Color(15 / 255, 157 / 255, 88 / 255);
+      ? new Color(0, 0.47, 0.74)
+      : new Color(0, 0.53, 0.82);
 
     renderer.render(null, this.shadowGeometry, () => shadowColor);
     renderer.render(this, this.geometry, () => backgroundColor);
@@ -196,7 +211,7 @@ class Text {
 
 const UI = new UIRenderer(
   canvas,
-  new Box([new Button("User"), new Button("Interface")])
+  new Box([new Button("HOVER"), new Button("CLICK")])
 );
 
 buttonWidthInput.value = Button.width;

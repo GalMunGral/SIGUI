@@ -157,7 +157,7 @@ export class Buffer {
 
   getPixel(x, y) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height)
-      return Color.TRANSPARENT;
+      return Color.WHITE;
     const i = y * this.width + x;
     return new Color(
       this.buffer[i * 4] / 255,
@@ -236,56 +236,4 @@ export function setup(
     }
     requestAnimationFrame(draw);
   });
-
-  // let first = true;
-  // function render() {
-  //   first = true;
-  //   ctx.putImageData(imageData, 0, 0);
-  // }
-
-  // const bufferMethodHandler = {
-  //   apply(target, _, argumentsList) {
-  //     if (first) {
-  //       first = false;
-  //       queueMicrotask(render);
-  //     }
-  //     return Reflect.apply(target, imageData.data, argumentsList);
-  //   },
-  // };
-
-  // const bufferHandler = {
-  //   get(target, prop, receiver) {
-  //     const value = Reflect.get(target, prop, receiver);
-  //     return typeof value == "function"
-  //       ? new Proxy(value, bufferMethodHandler)
-  //       : value;
-  //   },
-  //   set(target, prop, value, receiver) {
-  //     if (first) {
-  //       first = false;
-  //       queueMicrotask(render);
-  //     }
-  //     return Reflect.set(target, prop, value, receiver);
-  //   },
-  // };
-
-  // const handler = {
-  //   get(target, prop) {
-  //     const value = Reflect.get(target, prop, target);
-  //     return prop == "data" ? new Proxy(value, bufferHandler) : value;
-  //   },
-  // };
 }
-
-// helpers
-// export function mult(vec, s) {
-//   return vec.map((v) => v * s);
-// }
-
-// export function add(vec1, vec2) {
-//   return vec1.map((v, i) => v + vec2[i]);
-// }
-
-// export function round(vec) {
-//   return vec.map((v) => Math.round(v));
-// }

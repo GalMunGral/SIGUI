@@ -7,7 +7,7 @@ const alphaInput = document.querySelector("#alpha");
 
 let alpha = +alphaInput.value;
 
-const S = 80;
+const S = 40;
 const circle = simplePolygon(sampleCircle(30)).scale(2 * S);
 
 let dirty = true;

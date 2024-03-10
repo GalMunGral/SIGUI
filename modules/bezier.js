@@ -28,7 +28,7 @@ export function bezier(controlPoints, t) {
 }
 
 // TODO: fix oversampling
-export function sampleBezier(controlPoints, n = 10) {
+export function sampleBezier(controlPoints, n = 5) {
   const res = [];
   for (let t = 0; t < 1; t += 1 / n) {
     res.push(bezier([...controlPoints], t));

@@ -5,8 +5,6 @@ import { Vec2 } from "./utils.js";
 
 export const FontBook = {
   NotoSans: parse(await (await fetch("./NotoSans.ttf")).arrayBuffer()),
-  NotoSerif: parse(await (await fetch("./NotoSerif.ttf")).arrayBuffer()),
-  Zapfino: parse(await (await fetch("./Zapfino.ttf")).arrayBuffer()),
   Arizonia: parse(await (await fetch("./Arizonia.ttf")).arrayBuffer()),
 };
 

@@ -4,7 +4,7 @@ import { makeRing, sampleCircle } from "../modules/ellipse.js";
 import { blur, getGaussianKernel1D } from "../modules/blur.js";
 import { loadBitmap, sampleBitmap } from "../modules/bitmap.js";
 
-const bitmap = await loadBitmap("monet.jpeg");
+const bitmap = await loadBitmap("wave.jpg");
 const padding = 0;
 
 const canvas = document.querySelector("#glass");
@@ -13,12 +13,12 @@ const sigmaInput = document.querySelector("#sigma");
 let kernel = getGaussianKernel1D(+sigmaInput.value);
 
 const lensSize = 80;
-const frameSize = 5;
+const frameSize = 20;
 const glass = simplePolygon(sampleCircle(30)).scale(lensSize);
 const outline = makeRing(lensSize, lensSize + frameSize);
 
-let x = 0;
-let y = 0;
+let x = 100;
+let y = 100;
 
 let dirty = true;
 let dragging = false;
@@ -57,7 +57,7 @@ setup(
       buffer.buffer.set(cache.buffer);
 
       // frosted glass effect
-      const frameColor = new Color(0.9, 0.9, 0.9, 1);
+      const frameColor = new Color(0, 0, 0, 0.8);
       outline.translate(x, y).fill(buffer, () => frameColor);
       blur(buffer, glass.translate(x, y), kernel);
     }

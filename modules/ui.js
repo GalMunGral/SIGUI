@@ -33,13 +33,15 @@ export class UIRenderer {
         },
         onPointerMove: (p) => {
           const comp = this.hitTest(p);
-          let dirty = false;
+          let pointerOutHandled = false;
+          let pointerOverHandled = false;
           if (this.focus != comp) {
-            dirty =
-              this.focus?.handlePointerOut?.() || comp?.handlePointerOver?.();
+            pointerOutHandled = this.focus?.handlePointerOut?.();
+            pointerOverHandled = comp?.handlePointerOver?.();
             this.focus = comp;
           }
-          if (dirty || comp?.handlePointerMove?.(p)) {
+          const pointerMoveHandled = comp?.handlePointerMove?.(p);
+          if (pointerOutHandled || pointerOverHandled || pointerMoveHandled) {
             this.root.render(this);
           }
         },
