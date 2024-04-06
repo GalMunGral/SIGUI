@@ -60,8 +60,7 @@ gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
 
 const indexBuffer = gl.createBuffer();
 
-const text1 = "Structure and Interpretation";
-const text2 = "of Graphical User Interfaces";
+const text = "To be continued...";
 const initialSize = 80;
 
 let visible = false;
@@ -91,26 +90,14 @@ setInterval(() => {
 
     if (visible) {
       const polygons1 = makeText(
-        text1,
-        canvas.width / 2 - (text1.length * size) / 3.8,
+        text,
+        canvas.width / 2 - (text.length * size) / 3.8,
         canvas.height / 2 - size / 3,
         size,
         FontBook.NotoSans,
         3
       );
       for (let paths of polygons1) {
-        drawPolygon(gl, positionBuffer, indexBuffer, paths);
-      }
-
-      const polygons2 = makeText(
-        text2,
-        canvas.width / 2 - (text2.length * size) / 3.9,
-        canvas.height / 2 + size / 1.5,
-        size,
-        FontBook.NotoSans,
-        3
-      );
-      for (let paths of polygons2) {
         drawPolygon(gl, positionBuffer, indexBuffer, paths);
       }
     }

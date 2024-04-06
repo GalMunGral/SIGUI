@@ -172,7 +172,8 @@ for y in y1...y2 {
     \(y\) the horizontal scan line could now enter and leave the shape any
     number of times. Suppose it crosses the boundary at \(x_1, x_2, ...x_n\). It
     can be proved that \(n\) must be even, so all we need to do is to traverse
-    the intervals \([x_1, x_2)\), \([x_3, x_4)\), and so on:
+    the intervals \([x_1, x_2), [x_3, x_4), \dots, [x_{n-1}, x_n)\). In other
+    words,
   </p>
   <blockquote>
     <pre>
@@ -188,15 +189,15 @@ for y in y1...y2 {
   <p>
     Using the same logic, we can check if a point at integer coordinates
     \((x,y)\) lies within a closed shape. If it does, \(x\) must be in the
-    middle of one of <code>intervals(y)</code>, and therefore there must be an
-    odd number of intersections on either side &mdash; this is all we need for a
-    hit-test:
+    middle of one of the horizontal <code>intervals(y)</code>, and therefore
+    there must be an odd number of intersections on either side &mdash; this is
+    all we need for a hit-test!
   </p>
   <blockquote>
     <em>
       Given a point \((x_p,y_p)\), count the number of times the scan line \(y =
-      y_p\) intersects the boundary at a \(x > x_p\). The point is inside the
-      boundary if and only if the number is odd.
+      y_p\) intersects the boundary at a \(x > x_p\) (or equivalently, \(x \leq
+      x_p\)). The point is inside the boundary if and only if the number is odd.
     </em>
   </blockquote>
   But how do we find those intersection points?
@@ -299,7 +300,7 @@ for y in y1...y2 {
   <p>
     Ellipses are not just interesting in their own right: We can actually draw
     thick curves as a sequences of skinny rectangles joined by circles, which
-    are a special case of ellipses.
+    are essentially a special case of ellipses.
   </p>
   <p>
     Try drawing on the canvas below. Have you noticed the circles and
@@ -318,10 +319,10 @@ for y in y1...y2 {
   <h2>6. Gradients</h2>
 
   <p>
-    To make our polygons slightly fancier, let's create some color gradients
-    using a little bit of algebra. Suppose we want to the color to transition
-    from \(c_1\) to \(c_2\). We just need to take weighted averages
-    $$interpolate(v_1, v_2, t) = (1-t) \cdot v_1 + t \cdot v_2$$ at each pixel,
+    To make our polygons slightly more interesting, let's create some color
+    gradients using a little bit of algebra. Suppose we want the color to
+    transition from \(C_1\) to \(C_2\). We just need to take weighted averages
+    $$interpolate(C_1, C_2, t) = (1-t) \cdot C_1 + t \cdot C_2$$ at each pixel,
     and vary the parameter \(t\) based on some kind of distance. Take a look at
     the two types of color gradients below, computed as follows:
     $$RadialGradient(x,y) = interpolate\left(C_1, C_2, \frac{\sqrt{(x-x_o)^2 +
@@ -373,14 +374,13 @@ for y in y1...y2 {
   <h2>8. Bézier (II)</h2>
   <p>
     To rasterize a region enclosed by Bézier curves, we can apply the same trick
-    we used before for elliptic arcs &mdash; we can just sample \(N + 1\) points
-    at \(t = 0, 1/N, 2/N, \dots, 1\) and rasterize the resulting polygon
-    instead.
+    we used before for elliptic arcs &mdash; just sample a few points and
+    rasterize a polygon instead.
   </p>
   <p>
-    Try creating some Bézier shapes below. (After placing the starting point,
-    you need to add \(N\) control points for each new "Bézier edge" of order
-    \(N\) &mdash; 2 for quadratic and 3 for cubic, for example.)
+    Try creating some Bézier shapes below. Note that after placing the starting
+    point, you need to add \(N\) control points for each new "Bézier edge" of
+    order \(N\), i.e., 2 for quadratic and 3 for cubic.
   </p>
 
   <h4>Quadratic Bézier</h4>
@@ -396,9 +396,9 @@ for y in y1...y2 {
     segments), quadratic and cubic Bézier curves!
   </p>
   <p>
-    Take a look at the text below &mdash; it's drawn using the exact same
-    JavaScript implementatation of scan-line rasterization algorithm that we
-    used earlier to draw our first polygon!
+    Take a look at the text below &mdash; it's produced by the exact same
+    JavaScript implementatation of scan-line rasterization that we used earlier
+    to draw our first polygon!
   </p>
   <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
@@ -515,6 +515,4 @@ fn draw(node) {
 
   <canvas id="gpu"></canvas>
   <script type="module" src="./demo/gpu.js"></script>
-
-  <p>(To be continued.)</p>
 </body>
