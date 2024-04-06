@@ -97,10 +97,11 @@
   </h1>
 
   <p>
-    How do GUIs work, in terms of raw bytes and instructions? In this article,
-    I'll try to synthesize all the pieces that I've collected over the years, in
-    the hopes that it'll bring the same enlightenment to those seeking the same
-    knowledge.
+    How do graphical user interfaces operate at the level of raw bytes and
+    primitive operations? This incomplete article represents my first attempt to
+    consolidate the insights I've gathered over the years into a coherent
+    explanation. My hope is that it will illuminate this relatively obscure
+    knowledge somewhat for those who seek it.
   </p>
 
   <h2>Prelude: Event Loop</h2>
@@ -326,13 +327,16 @@ for y in y1...y2 {
     <input id="gradient-color-2" type="color" value="#000000" />
   </div>
   <script type="module" src="./demo/gradient.js"></script>
-  <p>Gradients are one is one example of linear interpolation.</p>
+  <p>
+    Gradients are just one example of what's called
+    <em>linear interpolation</em>.
+  </p>
 
   <h2>Bézier 1</h2>
   <p>
     We've seen that interpolating colors based on position produces color
-    gradients. Interestingly, interpolating positions based on time produces
-    smooth curves &mdash; the Bézier curves.
+    gradients. Interestingly, interpolating positions (recursively) based on
+    "time" produces smooth curves &mdash; the famous <em>Bézier curves</em>.
   </p>
   <p>
     Bézier curves can be constructed using the
@@ -405,7 +409,7 @@ for y in y1...y2 {
   </p>
   <p>
     Because containers typically lie underneath the things they contain, nodes
-    higher up in the tree (reminder: it's upside-down) must be drawn first,
+    higher up (reminder: it's upside-down) in the tree must be drawn first,
     which means we need a pre-order traversal:
   </p>
   <blockquote>
@@ -444,11 +448,11 @@ fn draw(node) {
 
   <h2>Blending</h2>
   <p>
-    What if we want to make the layers transparent? This is where the alpha
-    channel (A) in RGBA comes in. There are many ways to blend two colors, one
-    of which is the so-called "over" operator. Similar to color gradients and
-    Bézier curves, the "over" operator computes a weighted average of the two
-    colors \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
+    What if we want to see through the layers? This is where the alpha channel
+    (A) in RGBA comes in. There are many ways to blend two colors, one of which
+    is the so-called "over" operator. Similar to color gradients and Bézier
+    curves, the "over" operator computes a weighted average of the two colors
+    \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
     contributions to the final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b)
     = \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
