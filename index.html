@@ -156,7 +156,7 @@ fn handle(event) {
   </div>
   <script type="module" src="./demo/raster.js"></script>
 
-  <h2>1. Polygons</h2>
+  <h2>1. Shapes</h2>
   <p>We all know how to draw a rectangle with a simple nested loop:</p>
   <blockquote>
     <pre>
@@ -201,24 +201,24 @@ for y in y1...y2 {
   </blockquote>
   But how do we find those intersection points?
 
-  <h2>2. Rasterization</h2>
+  <h2>2. Polygons</h2>
 
   <p>
-    One possible way is to approximate arbitrary curves with polygons, so the
-    questions now becomes finding the line segments that cross the current scan
-    line. Suppose a line segment has two endpoints \((x_1,y_1)\) (inclusive) and
-    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection exists if
-    and only if \(y_1 \leq y < y_2\), and we can easily obtain:
-    $$intersection=\left(x_1 + \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The
-    slope of line segment $$k=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how much
-    \(x\) changes when we increment \(y\). Using the slope we can iteratively
-    walk along the line segment: \((x,y), (x+k, y+1), (x + 2k, y+2), \dots\)
+    One possible way is to approximate arbitrary shapes with polygons, so the
+    task now becomes finding line segments that cross the scan line. Suppose a
+    line segment has two endpoints \((x_1,y_1)\) (inclusive) and \((x_2, y_2)\)
+    (exclusive), where \(y_1 < y_2\). We know a scan line \(y\) can only cross
+    the line segment if \(y_1 \leq y < y_2\), and also $$intersection=\left(x_1
+    + \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The slope of line segment
+    $$k=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how much \(x\) changes when we
+    increment \(y\). Using the slope we can jump along the line segment:
+    \((x,y), (x+k, y+1), (x + 2k, y+2), \dots\)
   </p>
   <p>Here is the scan-line rasterization algorithm:</p>
   <blockquote>
     <em
-      >Keep track of a set of edges that intersect the scan line, along with
-      with their respective intersection points. In each iteration:
+      >Keep track of the set of edges that intersect the scan line along with
+      their respective intersection points. In each iteration:
       <ol>
         <li>Traverse each horizontal interval at current \(y\).</li>
         <li>Increment \(y\), then</li>
@@ -233,7 +233,7 @@ for y in y1...y2 {
   <p>
     The canvas below will draw a polygon from the points you click on, using a
     JavaScript implementation of this algorithm. (You must pick at least 3
-    points to draw a polygon!) The polygon will also light up when you hover
+    points to draw a polygon!) The polygon will light up in red when you hover
     over it.
   </p>
 
@@ -271,7 +271,7 @@ for y in y1...y2 {
     Let's take elliptic arcs as an eample. Suppose we want to draw an arc from
     angle \(\phi_1\) to \(\phi_2\) on a ellipse centered at \((x,y)\) with
     semi-major axis \(a\) and semi-minor axis \(b\) and rotated by an angle
-    \(\theta\). We can sample \(N + 1\) points using this formula:
+    \(\theta\). We can sample \(N + 1\) points using the formula:
     $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T_{x,y} \cdot R_{\theta} \cdot
     \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 - \phi_1}{N}\right),
     b\sin\left(\phi_1 + i\cdot\frac{\phi_2 - \phi_1}{N}\right)\right)^\top$$
@@ -297,9 +297,9 @@ for y in y1...y2 {
 
   <h2>5. Curves (II)</h2>
   <p>
-    Ellipses are not just interesting in their own right: We can actually
-    implement thick curves as a sequences of skinny rectangles joined by
-    circles, which are a special case of ellipses.
+    Ellipses are not just interesting in their own right: We can actually draw
+    thick curves as a sequences of skinny rectangles joined by circles, which
+    are a special case of ellipses.
   </p>
   <p>
     Try drawing on the canvas below. Have you noticed the circles and
@@ -343,11 +343,12 @@ for y in y1...y2 {
   <h2>7. Bézier (I)</h2>
   <p>
     We've seen that interpolating colors based on position produces color
-    gradients. Interestingly, interpolating positions (recursively) based on
-    "time" produces smooth curves &mdash; the famous <em>Bézier curves</em>.
+    gradients. Interestingly, interpolating positions (recursively) based on a
+    "time" parameter produces smooth curves &mdash; the famous
+    <em>Bézier curves</em>.
   </p>
   <p>
-    Bézier curves can be constructed using the
+    Bézier curves can be constructed iteratively using the
     <em>De Casteljau's algorithm</em>: Given control points \(p^{(0)}_0,
     p^{(0)}_1, \dots p^{(0)}_n\), we can find point \(B(t)\) on the curve in the
     following way:
@@ -362,7 +363,8 @@ for y in y1...y2 {
 
   <p>
     Try clicking on the canvas below to generate a Bézier curve of any order.
-    The color of the moving circle is also interpolated linearly based on time.
+    The color of the moving circle is also linearly interpolated based on
+    "time".
   </p>
 
   <canvas id="animation"></canvas>
@@ -372,7 +374,8 @@ for y in y1...y2 {
   <p>
     To rasterize a region enclosed by Bézier curves, we can apply the same trick
     we used before for elliptic arcs &mdash; we can just sample \(N + 1\) points
-    at \(t = 0, 1/N, \dots, 1\) and rasterize the polygon instead.
+    at \(t = 0, 1/N, 2/N, \dots, 1\) and rasterize the resulting polygon
+    instead.
   </p>
   <p>
     Try creating some Bézier shapes below. (After placing the starting point,
@@ -394,8 +397,8 @@ for y in y1...y2 {
   </p>
   <p>
     Take a look at the text below &mdash; it's drawn using the exact same
-    JavaScript implementatation of scanline rasterization algorithm that we used
-    earlier to draw our first polygon!
+    JavaScript implementatation of scan-line rasterization algorithm that we
+    used earlier to draw our first polygon!
   </p>
   <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
@@ -418,7 +421,7 @@ for y in y1...y2 {
   <p>
     Because containers typically lie underneath the things they contain, nodes
     higher up (reminder: it's upside-down) in the tree must be drawn first,
-    which means we need a pre-order traversal:
+    which means we need to perform a pre-order traversal:
   </p>
   <blockquote>
     <pre>
@@ -487,7 +490,7 @@ fn draw(node) {
   </p>
   <p>
     The kernel used for blurring is usually the 2D Gaussian function $$G(x,y) =
-    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right).$$ The
+    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right),$$ and the
     result is the so-called <em>Gaussian blur</em>.
   </p>
   <p>
@@ -504,9 +507,9 @@ fn draw(node) {
   <h2>13. Acceleration</h2>
   <p>
     So far, we've been tirelessly looping through all pixels on the CPU for
-    every single frame! This approach obvioiusly doesn't scale with higher
-    screen resolutions. Fortunately, for most of the rendering steps we can
-    actually process all pixels
+    every single frame! This approach obvioiusly doesn't scale well with higher
+    screen resolutions. Fortunately, for most of the steps above we can actually
+    process all pixels
     <em>in parallel</em> &mdash; GPU to the rescue!
   </p>
 
