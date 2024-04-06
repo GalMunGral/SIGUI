@@ -27,6 +27,10 @@
       font-style: italic;
     }
 
+    h2 {
+      margin-top: 50px;
+    }
+
     input {
       width: 200px;
     }
@@ -91,30 +95,19 @@
     Structure and Interpretation<br />
     of Graphical User Interfaces
   </h1>
-  <h2>(Very Rough Draft)</h2>
 
   <p>
-    How do GUIs <em>really</em> work, in terms of raw bytes and instructions?
-    Or, to put it another way, how can one create a GUI from absolute scratch?
-    This question has been on my mind for many years, and only recently (circa.
-    summer 2023) have I been able to connect the dots. In this article, I'll try
-    to synthesize all the fragments that I've been collecting over the years
-    from disparate sources, in the hopes that it'll bring the same enlightenment
-    to those seeking this knowledge.
-  </p>
-  <p>
-    (Disclaimer: None of what I present is original, but unfortunately I've lost
-    track of where they came from. No JS libraries or native browser APIs are
-    used in this interactive document except for font parsing and submitting the
-    finished buffer to canvas. The source code uses
-    <em>the most naive</em> implementation that is most likely not used by any
-    real software. It only serves as a proof that these ideas indeed work.)
+    How do GUIs work, in terms of raw bytes and instructions? In this article,
+    I'll try to synthesize all the pieces that I've collected over the years, in
+    the hopes that it'll bring the same enlightenment to those seeking the same
+    knowledge.
   </p>
 
   <h2>Prelude: Event Loop</h2>
 
   <p>
-    Each user interface is driven by an event loop, which at its core is simply:
+    Interactive program are driven by event loops. For user interfaces, this is
+    simply:
   </p>
 
   <blockquote>
@@ -129,10 +122,7 @@
   }</pre
     >
   </blockquote>
-  <p>
-    It casts these two spells in succession repeatedly to conjure the ghosts
-    behind pixels:
-  </p>
+  <p>The program rapidly switches between these two steps until exit:</p>
   <blockquote>
     <pre>
 fn draw() {
@@ -148,7 +138,7 @@ fn handle(event) {
     >
   </blockquote>
   <p>
-    Try clicking on this canvas. Can you see the ghosts emerging out of the
+    Try clicking on this canvas. Can you see the ghost emerging out of the
     noise?
   </p>
 
@@ -190,96 +180,95 @@ for y in y1...y2 {
     Using the same logic, we can check if a point at integer coordinates
     \((x,y)\) lies within a closed shape. If it does, \(x\) must be in the
     middle of one of <code>intervals(y)</code>, and therefore there must be an
-    odd number of intersections on either side (left or right) &mdash; this is
-    all we need for a hit-test:
+    odd number of intersections on either side &mdash; this is all we need for a
+    hit-test:
   </p>
   <blockquote>
     <em>
       Given a point \((x_p,y_p)\), count the number of times the scan line \(y =
-      y_p\) intersects the shape boundary at a \(x > x_p\). The point is on the
-      inside if and only if the number is odd.
+      y_p\) intersects the boundary at a \(x > x_p\). The point is inside the
+      boundary if and only if the number is odd.
     </em>
   </blockquote>
-  How exactly do we find those intersection points? To answer this question...
+  But how do we find those intersection points?
 
   <h2>Rasterization</h2>
 
   <p>
-    ... we can first approximate arbitrary curves with polygons. With polygons,
-    we can just focus on the straight edges that straddle the horizontal scan
-    line. Suppose an edge has two endpoints \((x_1,y_1)\) (inclusive) and
-    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection point
-    exists if and only if \(y_1 \leq y < y_2\). Since they are just line
-    segments, we can easily obtain the intersection point
+    One possible way is to approximate arbitrary curves with polygons, so the
+    questions now becomes finding the line segments that cross the current scan
+    line. Suppose a line segment has two endpoints \((x_1,y_1)\) (inclusive) and
+    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection exists if
+    and only if \(y_1 \leq y < y_2\), and we can easily obtain:
     $$intersection=\left(x_1 + \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The
     slope of line segment $$k=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how much
-    \(x\) changes when we increment \(y\). Using the slope we can walk along the
-    line segment iteratively: the point after \((x,y)\) is simply \((x+k,
-    y+1)\). Here is the scan-line rasterization algorithm:
+    \(x\) changes when we increment \(y\). Using the slope we can iteratively
+    walk along the line segment: \((x,y), (x+k, y+1), (x + 2k, y+2), \dots\)
   </p>
+  <p>Here is the scan-line rasterization algorithm:</p>
   <blockquote>
     <em
-      >Keep track of a set of edges that currently intersect the scan line,
-      along with with their respective intersection points. In each iteration:
+      >Keep track of a set of edges that intersect the scan line, along with
+      with their respective intersection points. In each iteration:
       <ol>
         <li>Traverse each horizontal interval at current \(y\).</li>
         <li>Increment \(y\), then</li>
         <ul>
           <li>Discard edges that no longer intersect the scan line.</li>
           <li>Increment each remaining intersection point by \((k, 1)\).</li>
-          <li>Add new edges that start to intersect the scan line.</li>
+          <li>Add new edges that begin to intersect the scan line.</li>
         </ul>
       </ol>
     </em>
   </blockquote>
   <p>
-    The canvas below uses a JS implementation of this algorithm, and will draw a
-    polygon from the points you click on. Needless to say, you need to pick at
-    least 3 points to draw a polygon. The polygon will light up when you hover
+    The canvas below will draw a polygon from the points you click on, using a
+    JavaScript implementation of this algorithm. (You must pick at least 3
+    points to draw a polygon!) The polygon will also light up when you hover
     over it.
   </p>
 
   <canvas id="polygon"></canvas>
   <script type="module" src="./demo/polygon.js"></script>
-  <p>
-    Congratulations! You now understand almost <em>everything</em> about GUIs!
-  </p>
+
   <h2>Transforms</h2>
   <p>
-    To move and morph our polygon, we can apply linear transformations. Since a
-    polygon is defined by its vertices, the only thing we need to do is to apply
-    the same transformation to each vertex before we rasterize the polygon.
+    To move and morph our polygon, we need to apply linear transformations.
+    Since a polygon is defined by its vertices, we just need to apply the same
+    transformations to each vertex before we rasterize.
   </p>
   <p>
-    Mathematically, it's more convenient to use homogeneous coordinates \((x, y,
-    1)\) to represent the point \((x,y)\) on screen, because then translation,
-    rotation and scaling can all be expressed neatly as composable \(3\times3\)
-    matrices: $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
+    Mathematically, it's more convenient to use homogeneous coordinates \((wx,
+    wy, w)\) to represent a point \((x,y)\) on screen, because it turns
+    translation, rotation and scaling all into composable \(3\times3\) matrices:
+    $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
     \end{pmatrix},\ R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
     \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix},\ S_{c} =
     \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1 \end{pmatrix}$$ Try
-    dragging the square below to watch these transforms in action.
+    dragging the square below to see the transforms in action:
   </p>
 
   <canvas id="transform"></canvas>
   <script type="module" src="./demo/transform.js"></script>
 
-  <h2>Curves</h2>
+  <h2>Curves 1</h2>
   <p>
-    By taking dicrete samples \(p_1, p_2, ...p_N\) along a curve, we can turn
-    any shape into an approximating polygon. The magic happens when the sampling
-    becomes so fine-grained that line segments become subpixel.
+    By sampling discrete points \(p_1, p_2, ...p_N\) along a curve, we can turn
+    any shape into a polygon. When the sampling becomes so fine-grained that the
+    line segments become subpixel, a polyline would be indistinguishable from a
+    smooth curve.
   </p>
   <p>
-    Let's take elliptic arcs as an eample. Suppose we want an arc from angle
-    \(\phi_1\) to \(\phi_2\) on a ellipse with semi-major axis \(a\) and
-    semi-minor axis \(b\), centered at \((x,y)\), and rotated by an angle
-    \(\theta\). We can create a polyon with \(N + 1\) points from the curve,
-    using this formula: $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T_{x,y} \cdot
-    R_{\theta} \cdot \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 -
-    \phi_1}{N}\right), b\sin\left(\phi_1 + i\cdot\frac{\phi_2 -
-    \phi_1}{N}\right)\right)^\top$$ Try increasing \(N\) and observe how the
-    coutour turns into a smooth curve.
+    Let's take elliptic arcs as an eample. Suppose we want to draw an arc from
+    angle \(\phi_1\) to \(\phi_2\) on a ellipse centered at \((x,y)\) with
+    semi-major axis \(a\) and semi-minor axis \(b\) and rotated by an angle
+    \(\theta\). We can sample \(N + 1\) points using this formula:
+    $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T_{x,y} \cdot R_{\theta} \cdot
+    \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 - \phi_1}{N}\right),
+    b\sin\left(\phi_1 + i\cdot\frac{\phi_2 - \phi_1}{N}\right)\right)^\top$$
+  </p>
+  <p>
+    Try increasing \(N\) below to see how a polygon turns into a smooth shape.
   </p>
 
   <canvas id="ellipse"></canvas>
@@ -297,12 +286,15 @@ for y in y1...y2 {
   </div>
   <script type="module" src="./demo/ellipse.js"></script>
 
+  <h2>Curves 2</h2>
   <p>
-    Why ellipses? Ellipses are interesting because they can actually help us
-    stroke curves that are more than a single pixel wide, which can be
-    implemented as sequence of skinny rectangles connected using circles as
-    "elbows". Try clicking on the canvas below to draw a polyline and change the
-    line width. Can you spot the circles and rectangles?
+    Ellipses are not just interesting in their own right: We can actually
+    implement thick curves as a sequences of skinny rectangles joined by
+    circles, which are a special case of ellipses.
+  </p>
+  <p>
+    Try drawing on the canvas below. Have you noticed the circles and
+    rectangles? What about when you increase the stroke width?
   </p>
 
   <canvas id="curve"></canvas>
@@ -314,21 +306,18 @@ for y in y1...y2 {
 
   <p></p>
 
-  <h2>Interpolation</h2>
+  <h2>Gradients</h2>
 
   <p>
-    So far all of our polygons are black, which is quite boring. We can make
-    them prettier by linearly interpolate between two colors. Linear
-    interpolation between two values \(v_1\) and \(v_2\) just means the weighted
-    average $$interpolate(v_1, v_2, t) = (1-t) \cdot v_1 + t \cdot v_2$$ where
-    the parameter \(t \in [0,1]\) controls how far we are from the starting
-    point. It should be easy to see that as \(t\) goes from \(0\) to \(1\), the
-    interpolated value changes continuously from \(v_1\) to \(v_2\). For color
-    gradients, \(t\) could be based on distance. Take a look at the two types of
-    color gradients below, computed as follows: $$RadialGradient(x,y) =
-    interpolate\left(C_1, C_2, \frac{\sqrt{(x-x_o)^2 + (y-y_o)^2}}{r}\right)$$
-    $$LinearGradient(x,y) = interpolate\left(C_1, C_2, \frac{y -
-    y_{min}}{y_{max} - y_{min}}\right)$$
+    To make our polygons slightly fancier, let's create some color gradients
+    using a little bit of algebra. Suppose we want to the color to transition
+    from \(c_1\) to \(c_2\). We just need to take weighted averages
+    $$interpolate(v_1, v_2, t) = (1-t) \cdot v_1 + t \cdot v_2$$ at each pixel,
+    and vary the parameter \(t\) based on some kind of distance. Take a look at
+    the two types of color gradients below, computed as follows:
+    $$RadialGradient(x,y) = interpolate\left(C_1, C_2, \frac{\sqrt{(x-x_o)^2 +
+    (y-y_o)^2}}{r}\right)$$ $$LinearGradient(x,y) = interpolate\left(C_1, C_2,
+    \frac{y - y_{min}}{y_{max} - y_{min}}\right)$$
   </p>
 
   <canvas id="gradient"></canvas>
@@ -337,20 +326,19 @@ for y in y1...y2 {
     <input id="gradient-color-2" type="color" value="#000000" />
   </div>
   <script type="module" src="./demo/gradient.js"></script>
+  <p>Gradients are one is one example of linear interpolation.</p>
 
-  <h2>Bézier</h2>
-
+  <h2>Bézier 1</h2>
   <p>
-    We've seen that interpolating
-    <strong>colors</strong> using <strong>position</strong> as the parameter
-    gives us color gradients. Now let's take one step further: Interpolating
-    <strong>positions</strong> using <strong>time</strong> as the paramter can
-    actually gives us smooth curves &mdash; this is the well-known Bézier curve.
+    We've seen that interpolating colors based on position produces color
+    gradients. Interestingly, interpolating positions based on time produces
+    smooth curves &mdash; the Bézier curves.
   </p>
   <p>
-    Bézier curves can be constructed by an iterative process: given control
-    points \(p^{(0)}_0, p^{(0)}_1, \dots p^{(0)}_n\), we can find the point
-    \(B(t)\) by the following process:
+    Bézier curves can be constructed using the
+    <em>De Casteljau's algorithm</em>: Given control points \(p^{(0)}_0,
+    p^{(0)}_1, \dots p^{(0)}_n\), we can find point \(B(t)\) on the curve in the
+    following way:
   </p>
   <blockquote>
     <em
@@ -361,28 +349,23 @@ for y in y1...y2 {
   </blockquote>
 
   <p>
-    For linear Bézier curves, we are just traveling from point A to point B at a
-    constant speed. Higher-order Bézier curves are not easy to describe, and the
-    best way to understand them is to follow this iterative algorithm manually
-    on paper and trace out the curve it generates.
-  </p>
-  <p>
     Try clicking on the canvas below to generate a Bézier curve of any order.
-    The color of the moving circle is linearly interpolated using time as the
-    parameter.
+    The color of the moving circle is also interpolated linearly based on time.
   </p>
 
   <canvas id="animation"></canvas>
   <script type="module" src="./demo/animation.js"></script>
 
-  <h2>Text</h2>
+  <h2>Bézier 2</h2>
   <p>
     To rasterize a region enclosed by Bézier curves, we can apply the same trick
-    we used for elliptic arcs &mdash; just sample \(N\) points on the curve at
-    \(t = 0, 1/N, 2/N, \dots, 1\) and draw a polygon instead. Try experimenting
-    with Bézier shapes below. (After putting down the first point, you need to
-    add \(order\) control points for each new "edge", i.e., 2 for quadratic and
-    3 for cubic.)
+    we used before for elliptic arcs &mdash; we can just sample \(N + 1\) points
+    at \(t = 0, 1/N, \dots, 1\) and rasterize the polygon instead.
+  </p>
+  <p>
+    Try creating some Bézier shapes below. (After placing the starting point,
+    you need to add \(N\) control points for each new "Bézier edge" of order
+    \(N\) &mdash; 2 for quadratic and 3 for cubic, for example.)
   </p>
 
   <h4>Quadratic Bézier</h4>
@@ -390,12 +373,17 @@ for y in y1...y2 {
   <h4>Cubic Bézier</h4>
   <canvas id="cubic-bezier"></canvas>
 
+  <h2>Text</h2>
   <p>
-    Why do we care about these weird geometries? Well, every single character on
-    this page &mdash; or, indeed, everything that uses OpenType/TrueType fonts
-    &mdash; is made of nothing but linear, quadratic and cubic Bézier curves!
-    Take a look at the text below &mdash; it's rendered by the exact same
-    algorithm that we used earlier to draw our first polygon!
+    What are these weird shapes good for? As it turns out, every single
+    character on this page &mdash; or indeed, everything that uses
+    OpenType/TrueType fonts &mdash; is made of nothing but linear (i.e. lines
+    segments), quadratic and cubic Bézier curves!
+  </p>
+  <p>
+    Take a look at the text below &mdash; it's drawn using the exact same
+    JavaScript implementatation of scanline rasterization algorithm that we used
+    earlier to draw our first polygon!
   </p>
   <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
@@ -411,13 +399,14 @@ for y in y1...y2 {
 
   <h2>Layers</h2>
   <p>
-    Usually, objects on screen form a hierarchy: Shapes contain other shapes,
-    and when a containing shape moves, everthing inside moves along with it.
-    Naturally, we want to represent the entire GUI as a
-    <it>tree</it> of shapes. To render the tree onto the screen we usually need
-    to perform a <i>pre-order</i> traversal, because containers are almost
-    always placed under the things they contain and therefore need to be drawn
-    first.
+    Elements on screen form a hierarchy &mdash; shapes contain other shapes, and
+    when a containing shape moves, everthing inside moves along with it. This
+    hierarchical relationship is best represented as a tree.
+  </p>
+  <p>
+    Because containers typically lie underneath the things they contain, nodes
+    higher up in the tree (reminder: it's upside-down) must be drawn first,
+    which means we need a pre-order traversal:
   </p>
   <blockquote>
     <pre>
@@ -429,32 +418,14 @@ fn draw(node) {
 }</pre
     >
   </blockquote>
-  If we use a layout system that takes constraints as input, we will need to
-  perform an extra layout pass first to calculate all the coordinates we need
-  for rasterization. On a high level, the layout algorithm might look something
-  like:
-  <blockquote>
-    <pre>
-fn layout(node, constraints) {
-  curConstraints = add(constraints, node.constraints)
-  for child in node.children {
-    update(curConstraints, layout(child, curConstraints))
-  }
-  return calculateGeometry(curConstraints)
-}</pre
-    >
-  </blockquote>
+
   <p>
-    For hit-testing, we need to determine the topmost polygon under the pointer.
-    The algorithm is pretty straighforward:
+    For hit-testing, we need to identify the topmost polygon under the pointer.
+    This is easy if we've recorded polygons in the order they were drawn, as we
+    could simply search through the records <em>backwards</em> for the
+    <em>last</em> drawn polygon that contains the cursor position.
   </p>
-  <blockquote>
-    <em>
-      Record polygons in the order they are drawn. To detect a hit, search
-      backwards through the list for the last drawn (i.e. topmost) polygon that
-      contains the cursor position.
-    </em>
-  </blockquote>
+
   <p>
     Now you know how to roll your own <code>&lt;buton/&gt;</code>'s and
     <code>&lt;div/&gt;</code>'s!
@@ -471,16 +442,15 @@ fn layout(node, constraints) {
   </div>
   <script type="module" src="./demo/composition.js"></script>
 
-  <h2>Compositing</h2>
-
+  <h2>Blending</h2>
   <p>
-    What if we want to make the layers transparent? This is where the A (<em
-      >alpha channel</em
-    >) in RGBA and <em>alpha blending</em> comes in. One the ways to blend two
-    colors is to use the so-called "over" operator, which simply takes a
-    weighted average of the two colors based on their respective contributions
-    to the final alpha: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b) =
-    \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
+    What if we want to make the layers transparent? This is where the alpha
+    channel (A) in RGBA comes in. There are many ways to blend two colors, one
+    of which is the so-called "over" operator. Similar to color gradients and
+    Bézier curves, the "over" operator computes a weighted average of the two
+    colors \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
+    contributions to the final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b)
+    = \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
   <canvas id="alpha-compositing"></canvas>
   <div>
@@ -488,24 +458,28 @@ fn layout(node, constraints) {
     <input id="alpha" type="number" min="0.1" max="1" value="0.2" step="0.1" />
   </div>
   <script type="module" src="./demo/alpha.js"></script>
+  <p>
+    But this is not the end of the story: To stack transparent layers on top of
+    each other, we need more than just alpha blending, otherwise it'd be
+    difficult to tell which layer is on the top and which is on the bottom.
+  </p>
 
   <h2>Filtering</h2>
   <p>
-    To stack transparent layers on top of each other, we need more than just
-    blending, otherwise it'd be hard to tell which layer is on top. One solution
-    is the "frosted glass" effect. For this, we need to "convolve" the image
-    with a Gaussian "kernel" &mdash; this is the well-known Gaussian blur
-    filter. What this convolution operation does, simply put, is averaging the
-    neighborhood surrounding each pixel, weighted by the 2D Gaussian function:
-    $$G(x,y) =
-    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right)$$
-    Convolution here is defined as: $$Output(x,y) = \frac{1}{C}\sum_{u=-k}^{k}
-    \sum_{v=-k}^{k} G(u,v)Input(x-u, y-v)$$ $$C = \sum_{u=-k}^{k}
-    \sum_{v=-k}^{k}G(u,v)$$
+    One solution is to apply a "frosted glass" post-processing effect. To do
+    this, we need to "convolve" the rasterized image. The word "convolution"
+    might sound fancy, but it really is just a weighted average (yes, again) of
+    the neighborhood around each pixel. Formally, with a "kernel" \(G(u,v)\):
+    $$C = \sum_{u=-k}^{k} \sum_{v=-k}^{k}G(u,v)$$ $$Output(x,y) =
+    \frac{1}{C}\sum_{u=-k}^{k} \sum_{v=-k}^{k} G(u,v)Input(x-u, y-v).$$
   </p>
   <p>
-    Try dragging the lens across the image below to see the blur filter in
-    action.
+    The kernel used for blurring is usually the 2D Gaussian function $$G(x,y) =
+    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right).$$ The
+    result is the so-called <em>Gaussian blur</em>.
+  </p>
+  <p>
+    Try dragging the lens below across the image to see Gaussian blur in action:
   </p>
 
   <canvas id="glass"></canvas>
@@ -517,17 +491,15 @@ fn layout(node, constraints) {
 
   <h2>Acceleration</h2>
   <p>
-    So far, we have been constantly iterating through all pixels in CPU, which
-    could potentially be quite slow for HiDPI screens. Fortunately, we can
+    So far, we've been tirelessly looping through all pixels on the CPU for
+    every single frame! This approach obvioiusly doesn't scale with higher
+    screen resolutions. Fortunately, for most of the rendering steps we can
     actually process all pixels
-    <em>in parallel</em> (for compositing and filtering, at least) &mdash; GPU
-    to the rescue!
+    <em>in parallel</em> &mdash; GPU to the rescue!
   </p>
 
   <canvas id="gpu"></canvas>
   <script type="module" src="./demo/gpu.js"></script>
 
-  <p>
-    <a href="https://github.com/GalMunGral/polyrender">(To be continued...)</a>
-  </p>
+  <p>(To be continued.)</p>
 </body>

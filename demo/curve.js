@@ -5,12 +5,15 @@ import { makeCurve } from "../modules/curve.js";
 const canvas = document.querySelector("#curve");
 const lineWidthInput = document.querySelector("#line-width");
 
-const points = [];
+const curves = [];
+
 let dirty = false;
 
 lineWidthInput.oninput = () => {
   dirty = true;
 };
+
+let pointerDown = false;
 
 setup(
   canvas,
@@ -18,16 +21,27 @@ setup(
     if (dirty) {
       dirty = false;
       buffer.clear();
-      makeCurve(points, +lineWidthInput.value / 2).fill(
-        buffer,
-        () => Color.BLACK
-      );
+      curves.forEach((curve) => {
+        makeCurve(curve, +lineWidthInput.value / 2).fill(
+          buffer,
+          () => Color.BLACK
+        );
+      });
     }
   },
   {
-    onClick(p) {
-      points.push(p);
-      dirty = true;
+    onPointerDown(p) {
+      pointerDown = true;
+      curves.push([]);
+    },
+    onPointerUp() {
+      pointerDown = false;
+    },
+    onPointerMove(p) {
+      if (pointerDown) {
+        curves[curves.length - 1].push(p);
+        dirty = true;
+      }
     },
   }
 );
