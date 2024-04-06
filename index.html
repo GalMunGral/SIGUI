@@ -91,26 +91,31 @@
     Structure and Interpretation<br />
     of Graphical User Interfaces
   </h1>
-  <h2>(Rough Draft)</h2>
+  <h2>(Very Rough Draft)</h2>
 
   <p>
-    Most people well-versed in science and technology can give you a general
-    account of the natural world, from galaxies to electrons and protons, but
-    the same cannot be said for man-made systems as simple as graphical user
-    interfaces (GUIs). It's quite unfortunate how little we know about the
-    things that our own species is creating!
+    How do GUIs <em>really</em> work, in terms of raw bytes and instructions?
+    Or, to put it another way, how can one create a GUI from absolute scratch?
+    This question has been on my mind for many years, and only recently (circa.
+    summer 2023) have I been able to connect the dots. In this article, I'll try
+    to synthesize all the fragments that I've been collecting over the years
+    from disparate sources, in the hopes that it'll bring the same enlightenment
+    to those seeking this knowledge.
   </p>
   <p>
-    So how do GUIs work? And what is the
-    <em>essense</em> of GUIs? This question has been on my mind for many years,
-    and only recently have I been able to connect the dots. In this article,
-    I'll try to weave together the pieces that I've collected over the years, in
-    the hopes that it'll bring the same enlightenment to like-minded seekers.
+    (Disclaimer: None of what I present is original, but unfortunately I've lost
+    track of where they came from. No JS libraries or native browser APIs are
+    used in this interactive document except for font parsing and submitting the
+    finished buffer to canvas. The source code uses
+    <em>the most naive</em> implementation that is most likely not used by any
+    real software. It only serves as a proof that these ideas indeed work.)
   </p>
 
-  <h2>Event Loop</h2>
+  <h2>Prelude: Event Loop</h2>
 
-  <p>First, each user interface is driven by an event loop, which is simply:</p>
+  <p>
+    Each user interface is driven by an event loop, which at its core is simply:
+  </p>
 
   <blockquote>
     <pre>
@@ -125,7 +130,8 @@
     >
   </blockquote>
   <p>
-    These are the two spells that conjure the ghosts behind the sheet of pixels:
+    It casts these two spells in succession repeatedly to conjure the ghosts
+    behind pixels:
   </p>
   <blockquote>
     <pre>
@@ -142,7 +148,7 @@ fn handle(event) {
     >
   </blockquote>
   <p>
-    Try clicking on this canvas. Can you spot the ghosts emerging out of the
+    Try clicking on this canvas. Can you see the ghosts emerging out of the
     noise?
   </p>
 
@@ -166,8 +172,8 @@ for y in y1...y2 {
     This idea can be extended to all closed shapes, except that for each \(y\)
     the horizontal scan line could now enter and leave the shape any number of
     times. Suppose it crosses the boundary at \(x_1, x_2, ...x_n\). It can be
-    proved that that \(n\) must be even, so all we need to do is to traverse the
-    intervals \([x_1, x_2)\), \([x_3, x_4)\), etc.:
+    proved that \(n\) must be even, so all we need to do is to traverse the
+    intervals \([x_1, x_2)\), \([x_3, x_4)\), and so on:
   </p>
   <blockquote>
     <pre>
@@ -181,34 +187,34 @@ for y in y1...y2 {
     >
   </blockquote>
   <p>
-    This algorithm could also be adapted to check if the point at integer
-    coordinates \((x,y)\) lies within a closed shape. If it does, \(x\) must be
-    on one of those intervals, and therefore there must be an odd number of
-    intersections on the either side &mdash; this is all we need for a hit-test:
+    Using the same logic, we can check if a point at integer coordinates
+    \((x,y)\) lies within a closed shape. If it does, \(x\) must be in the
+    middle of one of <code>intervals(y)</code>, and therefore there must be an
+    odd number of intersections on either side (left or right) &mdash; this is
+    all we need for a hit-test:
   </p>
   <blockquote>
     <em>
       Given a point \((x_p,y_p)\), count the number of times the scan line \(y =
-      y_p\) intersects the curve at a \(x > x_p\). The point is on the inside if
-      and only if the number is odd.
+      y_p\) intersects the shape boundary at a \(x > x_p\). The point is on the
+      inside if and only if the number is odd.
     </em>
   </blockquote>
-  Now, how exactly do we find those intersection points? To answer the
-  question...
+  How exactly do we find those intersection points? To answer this question...
 
   <h2>Rasterization</h2>
 
   <p>
-    ... we first need to approximate arbitrary curves with polygons. With
-    polygons, we can just focus on the straight edges that straddle the
-    horizontal scan line. Suppose an edge has two endpoints \((x_1,y_1)\)
-    (inclusive) and \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An
-    intersection point exists if and only if \(y_1 \leq y < y_2\). We can easily
-    obtain the intersection point $$intersection=\left(x_1 +
-    \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The slope of line segment
-    $$k=\frac{\Delta x}{\Delta y}=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how
-    much \(x\) changes when we increment \(y\). Using the slope we can walk
-    along the line segment &mdash; the point after \((x,y)\) is simply \((x+k,
+    ... we can first approximate arbitrary curves with polygons. With polygons,
+    we can just focus on the straight edges that straddle the horizontal scan
+    line. Suppose an edge has two endpoints \((x_1,y_1)\) (inclusive) and
+    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). An intersection point
+    exists if and only if \(y_1 \leq y < y_2\). Since they are just line
+    segments, we can easily obtain the intersection point
+    $$intersection=\left(x_1 + \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The
+    slope of line segment $$k=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how much
+    \(x\) changes when we increment \(y\). Using the slope we can walk along the
+    line segment iteratively: the point after \((x,y)\) is simply \((x+k,
     y+1)\). Here is the scan-line rasterization algorithm:
   </p>
   <blockquote>
@@ -227,15 +233,17 @@ for y in y1...y2 {
     </em>
   </blockquote>
   <p>
-    The canvas below will draw a polygon from the points you click on (you need
-    to pick at least 3) using this algorithm (implemented in JavaScript). The
-    polygon will be highlighted when you hover over it.
+    The canvas below uses a JS implementation of this algorithm, and will draw a
+    polygon from the points you click on. Needless to say, you need to pick at
+    least 3 points to draw a polygon. The polygon will light up when you hover
+    over it.
   </p>
 
   <canvas id="polygon"></canvas>
   <script type="module" src="./demo/polygon.js"></script>
-  <p>Congratulations! You now understand <em>everything</em> about GUIs!</p>
-  <p>But let's continue...</p>
+  <p>
+    Congratulations! You now understand almost <em>everything</em> about GUIs!
+  </p>
   <h2>Transforms</h2>
   <p>
     To move and morph our polygon, we can apply linear transformations. Since a
@@ -247,10 +255,10 @@ for y in y1...y2 {
     1)\) to represent the point \((x,y)\) on screen, because then translation,
     rotation and scaling can all be expressed neatly as composable \(3\times3\)
     matrices: $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
-    \end{pmatrix}, R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
-    \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix}, S_{c} =
+    \end{pmatrix},\ R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
+    \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix},\ S_{c} =
     \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1 \end{pmatrix}$$ Try
-    dragging the square below to see some of these transforms in action.
+    dragging the square below to watch these transforms in action.
   </p>
 
   <canvas id="transform"></canvas>
@@ -260,7 +268,7 @@ for y in y1...y2 {
   <p>
     By taking dicrete samples \(p_1, p_2, ...p_N\) along a curve, we can turn
     any shape into an approximating polygon. The magic happens when the sampling
-    becomes so fine-grained that the edges become subpixel.
+    becomes so fine-grained that line segments become subpixel.
   </p>
   <p>
     Let's take elliptic arcs as an eample. Suppose we want an arc from angle
@@ -290,10 +298,11 @@ for y in y1...y2 {
   <script type="module" src="./demo/ellipse.js"></script>
 
   <p>
-    Ellipses are important because they actually help us draw curves that are
-    more than a single pixel wide, which can be approximated by a sequence of
-    skinny rectangles connected using circles as "elbows". Try clicking on the
-    canvas below to draw a polyline. Can you spot the circles and rectangles?
+    Why ellipses? Ellipses are interesting because they can actually help us
+    stroke curves that are more than a single pixel wide, which can be
+    implemented as sequence of skinny rectangles connected using circles as
+    "elbows". Try clicking on the canvas below to draw a polyline and change the
+    line width. Can you spot the circles and rectangles?
   </p>
 
   <canvas id="curve"></canvas>
