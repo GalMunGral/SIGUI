@@ -112,7 +112,7 @@
     was.
   </p>
 
-  <h2>0. Event Loop</h2>
+  <h2>Event Loop</h2>
 
   <p>
     Interactive program are driven by event loops. For user interfaces, this is
@@ -156,7 +156,7 @@ fn handle(event) {
   </div>
   <script type="module" src="./demo/raster.js"></script>
 
-  <h2>1. Shapes</h2>
+  <h2>Shapes</h2>
   <p>We all know how to draw a rectangle with a simple nested loop:</p>
   <blockquote>
     <pre>
@@ -202,7 +202,7 @@ for y in y1...y2 {
   </blockquote>
   But how do we find those intersection points?
 
-  <h2>2. Polygons</h2>
+  <h2>Polygons</h2>
 
   <p>
     One possible way is to approximate arbitrary shapes with polygons, so the
@@ -241,7 +241,7 @@ for y in y1...y2 {
   <canvas id="polygon"></canvas>
   <script type="module" src="./demo/polygon.js"></script>
 
-  <h2>3. Transforms</h2>
+  <h2>Transforms</h2>
   <p>
     To move and morph our polygon, we need to apply linear transformations.
     Since a polygon is defined by its vertices, we just need to apply the same
@@ -261,7 +261,7 @@ for y in y1...y2 {
   <canvas id="transform"></canvas>
   <script type="module" src="./demo/transform.js"></script>
 
-  <h2>4. Curves (I)</h2>
+  <h2>Curves (I)</h2>
   <p>
     By sampling discrete points \(p_1, p_2, ...p_N\) along a curve, we can turn
     any shape into a polygon. When the sampling becomes so fine-grained that the
@@ -296,7 +296,7 @@ for y in y1...y2 {
   </div>
   <script type="module" src="./demo/ellipse.js"></script>
 
-  <h2>5. Curves (II)</h2>
+  <h2>Curves (II)</h2>
   <p>
     Ellipses are not just interesting in their own right: We can actually draw
     thick curves as a sequences of skinny rectangles joined by circles, which
@@ -316,7 +316,7 @@ for y in y1...y2 {
 
   <p></p>
 
-  <h2>6. Gradients</h2>
+  <h2>Gradients</h2>
 
   <p>
     To make our polygons slightly more interesting, let's create some color
@@ -341,7 +341,7 @@ for y in y1...y2 {
     <em>linear interpolation</em>.
   </p>
 
-  <h2>7. Bézier (I)</h2>
+  <h2>Bézier (I)</h2>
   <p>
     We've seen that interpolating colors based on position produces color
     gradients. Interestingly, interpolating positions (recursively) based on a
@@ -371,7 +371,7 @@ for y in y1...y2 {
   <canvas id="animation"></canvas>
   <script type="module" src="./demo/animation.js"></script>
 
-  <h2>8. Bézier (II)</h2>
+  <h2>Bézier (II)</h2>
   <p>
     To rasterize a region enclosed by Bézier curves, we can apply the same trick
     we used before for elliptic arcs &mdash; just sample a few points and
@@ -388,7 +388,7 @@ for y in y1...y2 {
   <h4>Cubic Bézier</h4>
   <canvas id="cubic-bezier"></canvas>
 
-  <h2>9. Text</h2>
+  <h2>Text</h2>
   <p>
     What are these weird shapes good for? As it turns out, every single
     character on this page &mdash; or indeed, everything that uses
@@ -412,7 +412,7 @@ for y in y1...y2 {
   </div>
   <script type="module" src="./demo/font.js"></script>
 
-  <h2>10. Layers</h2>
+  <h2>Layers</h2>
   <p>
     Elements on screen form a hierarchy &mdash; shapes contain other shapes, and
     when a containing shape moves, everthing inside moves along with it. This
@@ -457,7 +457,7 @@ fn draw(node) {
   </div>
   <script type="module" src="./demo/composition.js"></script>
 
-  <h2>11. Blending</h2>
+  <h2>Blending</h2>
   <p>
     What if we want to see through the layers? This is where the alpha channel
     (A) in RGBA comes in. There are many ways to blend two colors, one of which
@@ -479,7 +479,7 @@ fn draw(node) {
     difficult to tell which layer is on the top and which is on the bottom.
   </p>
 
-  <h2>12. Filtering</h2>
+  <h2>Filtering</h2>
   <p>
     One solution is to apply a "frosted glass" post-processing effect. To do
     this, we need to "convolve" the rasterized image. The word "convolution"
@@ -504,7 +504,7 @@ fn draw(node) {
   </div>
   <script type="module" src="./demo/glass.js"></script>
 
-  <h2>13. Acceleration</h2>
+  <h2>Acceleration</h2>
   <p>
     So far, we've been tirelessly looping through all pixels on the CPU for
     every single frame! This approach obvioiusly doesn't scale well with higher
