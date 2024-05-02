@@ -22,13 +22,16 @@
 
     h1,
     h2,
-    h3 {
+    h3,
+    h4 {
       text-align: center;
       font-style: italic;
     }
 
-    h2 {
-      margin-top: 50px;
+    h2,
+    h3 {
+      font-weight: normal;
+      /* margin-top: 50px; */
     }
 
     input {
@@ -93,21 +96,24 @@
 <body>
   <h1>
     Structure and Interpretation<br />
-    of Graphical User Interfaces
+    of Graphical User Interfaces <br />
   </h1>
+  <h3>(What I Wish I Had Learned in CS 101)</h3>
 
   <p>
-    How do graphical user interfaces operate at the level of primitive operations (i.e. bytes and instructions)? How exactly does a computer,
-    as its name suggests,
-    <em>compute</em> a vector-based GUI into existence? How
-    can things that feel "alive" arise from arithmetic and logical
-    manipulations?
+    How do graphical user interfaces operate at the level of primitive
+    operations (i.e. bytes and instructions)? How exactly does a computer, as
+    its name suggests,
+    <em>compute</em> a vector-based GUI into existence from thin air? How can
+    vivid visual metaphors arise algorithmically solely from boring arithmetic
+    and logical manipulations?
   </p>
   <p>
     This incomplete article is my first attempt to consolidate the pieces of
-    knowledge I've gathered over the years into a concise and coherent answer
-    to these questions. In writing and sharing this article, my hope is to illuminate 
-    this relatively arcane and ancient area for those curious as I once was.
+    knowledge I've gathered into a concise and coherent answer to these
+    questions. In writing and sharing this article, my hope is to shed light on
+    this slightly obscure area and spare the curious reader the frustration from
+    futile Googling on this topic.
   </p>
 
   <h2>Event Loop</h2>
