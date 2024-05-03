@@ -74,6 +74,7 @@
     }
 
     #gpu {
+      margin-top: 200px;
       box-shadow: none;
       height: 120px;
     }
@@ -108,20 +109,14 @@
     operations (i.e. bytes and instructions)? How exactly could a computer
     <em>compute</em> a vector-based GUI into existence from thin air? How can
     vivid visual metaphors arise algorithmically from just arithmetic and
-    logical manipulations?
-  </p>
-  <p>
-    This incomplete article is my first attempt to consolidate the pieces of
-    knowledge I've gathered into a concise and coherent answer to these
-    questions. In writing and sharing this article, my hope is to shed light on
-    this slightly obscure area and spare the curious reader the frustration from
-    futile Googling. (ChatGPT, however, seems to be very knowledgeable about
-    everything mentioned here.)
+    logical manipulations? This article is my first attempt to piece together
+    what I've gathered over the years into a concise but coherent answer to
+    these questions.
   </p>
 
   <h2>Event Loop</h2>
 
-  <p>First of all, the interactivity of GUIs comes its event loop:</p>
+  <p>First of all, the interactivity of GUIs comes from its event loop:</p>
 
   <blockquote>
     <pre>
@@ -162,7 +157,7 @@ fn draw() {
   <h2>Closed Curves</h2>
   <p>
     At the core of 2D graphics is the mathematical concept of
-    <em>"the interior of closed curves"</em>, such as circles and rectangles. We
+    <em>the interior of closed curves</em>, such as circles and rectangles. We
     already know how to fill the interior of a rectangle with a simple nested
     loop:
   </p>
@@ -179,12 +174,12 @@ fn fill(rect) {
     >
   </blockquote>
   <p>
-    This idea can actually be generalized to all closed curves, except that for
-    each \(y\) the horizontal scan line could now enter and leave a curve's
-    interior any number of times. Suppose it crosses the curve at \(x_1, x_2,
-    ...x_n\). It can be proved that \(n\) must be even, so all we need to do is
-    iterating through all the intervals \([x_1, x_2), [x_3, x_4), \dots
-    [x_{n-1}, x_n)\). In other words,
+    This idea can be generalized to all closed curves, except that for an
+    arbitrary curve the horizontal scan line at each \(y\) could enter and leave
+    the curve's interior any number of times. Suppose it crosses the curve at
+    \(x_1, x_2, ...x_n\). It can be proved that \(n\) must be even, so all we
+    need to do is iterating through all the intervals \([x_1, x_2), [x_3, x_4),
+    \dots [x_{n-1}, x_n)\). In other words,
   </p>
   <blockquote>
     <pre>
@@ -220,7 +215,10 @@ fn fill(curve) {
 
   <p>
     As a starting point, let's look at a simple case: polygons. With polygons,
-    our task becomes finding line segments that cross the scan line at \(y\).
+    our problem becomes finding <em>line segments</em> that cross the scan line
+    at \(y\). This is much more tractable!
+  </p>
+  <p>
     Suppose a line segment has two endpoints \((x_1,y_1)\) (inclusive) and
     \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). We know a scan line \(y\)
     can only cross the line segment if \(y_1 \leq y < y_2\), and also
@@ -229,7 +227,7 @@ fn fill(curve) {
     \(x\) changes when we increment \(y\). Using the slope we can walk the line
     segment: \((x,y), (x+k, y+1), (x + 2k, y+2), \dots\)
   </p>
-  <p>Here is the scan-line rasterization algorithm:</p>
+  <p>Here is the complete scan-line rasterization algorithm:</p>
   <blockquote>
     <em
       >Keep track of the set of edges that intersect the scan line along with
@@ -246,7 +244,7 @@ fn fill(curve) {
     </em>
   </blockquote>
   <p>
-    The canvas below will draw a polygon from the points you click on, using a
+    The canvas below can draw a polygon from the points you click on using a
     JavaScript implementation of this algorithm. The polygon will light up in
     red when you hover over it. (Note: You must pick at least 3 points to draw a
     polygon.)
@@ -280,11 +278,12 @@ fn fill(curve) {
 
   <h2>Discretization</h2>
   <p>
-    Back to the question of finding <code>curve.intervals(y)</code> for any
-    parametric curves. Now that we've covered the case of polygons, there is a
-    simple solution: Just convert the curve into a polygon by discrete sampling!
-    When the sampling rate becomes high enough that the resulting line segments
-    become subpixel, a polygon would be indistinguishable from a smooth curve.
+    Back to the question of finding <code>curve.intervals(y)</code> for an
+    arbitrary parametric curve. Now that we've handled the case of polygons,
+    there is an obvious solution: Just convert the curve into a polygon by
+    discrete sampling! When the sampling rate becomes high enough that the
+    resulting line segments become subpixel, a polygon would be
+    indistinguishable from a smooth curve.
   </p>
   <p>
     Let's take elliptic arcs as a concrete eample. Suppose we want to draw an
@@ -317,11 +316,11 @@ fn fill(curve) {
   <h2>Strokes</h2>
   <p>
     Ellipses are not just interesting in their own right. We can actually use
-    them to render 1D (well, not really) objects: We can stroke a thick curve
-    simply by filling a sequences of skinny rectangles joined by circles, which
-    are, of course, a special case of ellipses! Try drawing on the canvas below.
-    Have you noticed the circles and rectangles? What about when you increase
-    the line width?
+    them to render 1D (well, not really) objects: We can stroke a thick curve by
+    filling a sequences of skinny rectangles joined by circles, which are, of
+    course, a special case of ellipses! Try drawing on the canvas below. Have
+    you noticed the circles and rectangles? What about when you increase the
+    line width?
   </p>
 
   <canvas id="curve"></canvas>
@@ -336,13 +335,13 @@ fn fill(curve) {
   <h2>Color Gradients</h2>
 
   <p>
-    To make fancier polygons, let's apply some color gradients! Suppose we want
-    the color to transition from \(C_1\) to \(C_2\). We just need to take a
-    weighted average $$interpolate(C_1, C_2, t) = (1-t) \cdot C_1 + t \cdot
-    C_2$$ at each pixel, and vary the parameter \(t\) based on some kind of
-    distance metric. Take a look at the two types of color gradients below,
-    computed as follows: $$RadialGradient(x,y) = interpolate\left(C_1, C_2,
-    \frac{\sqrt{(x-x_o)^2 + (y-y_o)^2}}{r}\right)$$ $$LinearGradient(x,y) =
+    To make our polygons more interesting, let's apply some color gradients!
+    Let's say we want the color to transition from \(C_1\) to \(C_2\). We just
+    need to take a weighted average $$interpolate(C_1, C_2, t) = (1-t) \cdot C_1
+    + t \cdot C_2$$ at each pixel, and vary the parameter \(t\) based on some
+    kind of distance metric. Take a look at the two types of color gradients
+    below, computed as follows: $$RadialGradient(x,y) = interpolate\left(C_1,
+    C_2, \frac{\sqrt{(x-x_o)^2 + (y-y_o)^2}}{r}\right)$$ $$LinearGradient(x,y) =
     interpolate\left(C_1, C_2, \frac{y - y_{min}}{y_{max} - y_{min}}\right)$$
   </p>
 
@@ -359,10 +358,10 @@ fn fill(curve) {
 
   <h2>Bézier Curves</h2>
   <p>
-    We've seen that interpolating colors based on position gives us color
-    gradients. Interestingly, interpolating positions recursively based on a
-    parameter shared by all levels of the recursion produces smooth curves
-    &mdash; the ubiquitous
+    We've seen that linearly interpolating colors based on position gives us
+    color gradients. Interestingly, linearly interpolating positions recursively
+    based on the same \(t\) shared by all levels of the recursion produces
+    smooth curves &mdash; the ubiquitous
     <em>Bézier curves</em>.
   </p>
   <p>
@@ -380,7 +379,7 @@ fn fill(curve) {
 
   <p>
     Try clicking on the canvas below to stroke a Bézier curve. The color of the
-    moving circle is linearly interpolated based on \(t\) as well.
+    moving circle is interpolated based on the same \(t\) as the curve.
   </p>
 
   <canvas id="animation"></canvas>
@@ -400,15 +399,15 @@ fn fill(curve) {
 
   <h2>Text</h2>
   <p>
-    What are these wavy curves good for? Yes, every single character on this web
-    page &mdash; or indeed, everything that uses OpenType/TrueType fonts &mdash;
-    is made of nothing but linear (i.e. lines segments), quadratic and cubic
-    Bézier curves!
+    What are these wavy curves good for? Well, every single letter you are
+    reading right now on this page &mdash; or indeed, everything that uses
+    OpenType/TrueType fonts &mdash; is made of nothing but linear (i.e. lines
+    segments), quadratic and cubic Bézier curves!
   </p>
   <p>
     Take a look at the text below &mdash; it's being rendered by our
-    implementatation of scan-line rasterization, the same one we used earlier to
-    draw our first polygon!
+    implementatation of scan-line rasterization, the one we used earlier to draw
+    our first polygon!
   </p>
   <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
@@ -424,14 +423,14 @@ fn fill(curve) {
 
   <h2>Layers</h2>
   <p>
-    A GUI consists of a containment hierarchy of geometries, and when a
+    A GUI mainly consists of a containment hierarchy of geometries. When a
     containing geometry is transformed, the same transformation applies to
     everthing inside. This hierarchy is naturally represented as a tree.
   </p>
   <p>
-    Visually, containers should lie beneath the things they contain, so nodes
+    Visually, containers are placed beneath the things they contain, so nodes
     closer to the root must be drawn first. In other words, we need to perform a
-    pre-order traversal:
+    <em>pre-order</em> traversal:
   </p>
   <blockquote>
     <pre>
@@ -470,14 +469,15 @@ fn draw(node) {
 
   <h2>Blending</h2>
   <p>
-    If we want to see through overlapping layers, we need to "blend" pixels from
-    those layers. This is where the alpha channel (A) in RGBA comes in. There
-    are many ways to add two colors together, one of which is the so-called
-    "over" operator. Quite similar to what we did for color gradients and Bézier
-    curves, the "over" operator computes a weighted average of two colors
-    \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
-    contributions to the final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b)
-    = \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
+    With a containment hierarchy, geometries inevitably overlap. If we want to
+    see through overlapping layers, we need to "blend" pixels from those layers.
+    This is where the alpha channel (A) in RGBA comes in. There are many ways to
+    add two colors together, one of which is the so-called "over" operator.
+    Quite similar to what we did for color gradients and Bézier curves, the
+    "over" operator calculates a weighted average of two colors \((r_1, g_1,
+    b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their contributions to the
+    final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b) =
+    \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
   <canvas id="alpha-compositing"></canvas>
   <div>
@@ -487,7 +487,7 @@ fn draw(node) {
   <script type="module" src="./demo/alpha.js"></script>
   <p>
     But as you might have noticed, with only alpha blending, it's still quite
-    difficult to tell the stacking order of things.
+    difficult to distinguish the stacking order of things.
   </p>
 
   <h2>Filtering</h2>
@@ -498,7 +498,7 @@ fn draw(node) {
     average (yes, again) of the neighborhood surrounding each pixel, using the
     weights given by a "kernel" function \(G(u,v)\): $$C = \sum_{u=-k}^{k}
     \sum_{v=-k}^{k}G(u,v)$$ $$Output(x,y) = \frac{1}{C}\sum_{u=-k}^{k}
-    \sum_{v=-k}^{k} G(u,v)Input(x-u, y-v).$$
+    \sum_{v=-k}^{k} G(u,v) \cdot Input(x-u, y-v).$$
   </p>
   <p>
     The kernel used for blurring is the 2D Gaussian function $$G(x,y) =
