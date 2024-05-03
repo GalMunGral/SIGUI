@@ -31,7 +31,10 @@
     h2,
     h3 {
       font-weight: normal;
-      /* margin-top: 50px; */
+    }
+
+    h2 {
+      margin-top: 50px;
     }
 
     input {
@@ -113,111 +116,117 @@
     knowledge I've gathered into a concise and coherent answer to these
     questions. In writing and sharing this article, my hope is to shed light on
     this slightly obscure area and spare the curious reader the frustration from
-    futile Googling on this topic.
+    futile Googling. (ChatGPT, however, seems to be very knowledgeable about
+    everything mentioned here.)
   </p>
 
   <h2>Event Loop</h2>
 
-  <p>
-    Interactive program are driven by event loops. For user interfaces, this is
-    simply:
-  </p>
+  <p>First of all, the interactivity of GUIs comes its event loop:</p>
 
   <blockquote>
     <pre>
-  while !quit {
-    if event = poll() {
-      handle(event)
-    }
-    if dirty { 
-      draw()
-    }
-  }</pre
+while !quit {
+  if event = poll() {
+    handle(event)
+  }
+  if dirty { 
+    draw()
+  }
+}</pre
     >
   </blockquote>
-  <p>The program rapidly switches between these two steps until exit:</p>
+  In each iteration, the program processes inputs and produces outputs:
   <blockquote>
     <pre>
-fn draw() {
-  for (x,y) in shape {
-    color(x, y)
-  }
+fn handle(event) {
+  target = pick(event.xy)
+  target.handle(event)
 }
 
-fn handle(event) {
-  target = pick(event.x, event.y)
-  target.handle(e)
-}</pre
-    >
-  </blockquote>
-  <p>
-    Try clicking on this canvas. Can you see the ghost emerging out of the
-    noise?
-  </p>
-
-  <div style="position: relative">
-    <canvas id="raster"></canvas>
-  </div>
-  <script type="module" src="./demo/raster.js"></script>
-
-  <h2>Shapes</h2>
-  <p>We all know how to draw a rectangle with a simple nested loop:</p>
-  <blockquote>
-    <pre>
-for y in y1...y2 {
-  for x in x1...x2 {
-    color(x, y)
-  }
-} </pre
-    >
-  </blockquote>
-  <p>
-    This idea can be generalized to all closed shapes, except that for each
-    \(y\) the horizontal scan line could now enter and leave the shape any
-    number of times. Suppose it crosses the boundary at \(x_1, x_2, ...x_n\). It
-    can be proved that \(n\) must be even, so all we need to do is to traverse
-    the intervals \([x_1, x_2), [x_3, x_4), \dots, [x_{n-1}, x_n)\). In other
-    words,
-  </p>
-  <blockquote>
-    <pre>
-for y in y1...y2 {
-  for (x1, x2) in intervals(y) {
-    for x in x1...x2 {
-      color(x, y)
+fn draw() {
+  for each geometry on screen {
+    for x, y in geometry {
+      geometry.color(x, y)
     }
   }
 }</pre
+    >
+  </blockquote>
+  <p>
+    The main complexity lies in the <code>draw()</code> and
+    <code>pick(event.xy)</code> functions. As we'll see, by implementing
+    <code>draw()</code>, we'll get a solution for
+    <code>pick(event.xy)</code> almost for free.
+  </p>
+
+  <h2>Closed Curves</h2>
+  <p>
+    At the core of 2D graphics is the mathematical concept of
+    <em>"the interior of closed curves"</em>, such as circles and rectangles. We
+    know how to fill the interior of a rectangle with a simple nested loop:
+  </p>
+  <blockquote>
+    <pre>
+fn fill(rect) {
+  for y in rect.y1...rect.y2 {
+    for x in rect.x1...rect.x2 {
+      rect.color(x, y)
+    }
+  } 
+}
+</pre
+    >
+  </blockquote>
+  <p>
+    This idea can be generalized to all closed curves, except that for each
+    \(y\) the horizontal scan line could now enter and leave its interior any
+    number of times. Suppose it crosses the curve at \(x_1, x_2, ...x_n\). It
+    can be proved that \(n\) must be even, so all we need to do is to fill the
+    intervals \([x_1, x_2), [x_3, x_4), \dots, [x_{n-1}, x_n)\). In other words,
+  </p>
+  <blockquote>
+    <pre>
+fn fill(curve) {
+  for y in curve.y1...curve.y2 {
+    for x1, x2 in curve.intervals(y) {
+      for x in x1...x2 {
+        curve.color(x, y)
+      }
+    }
+  }
+}
+</pre
     >
   </blockquote>
   <p>
     Using the same logic, we can check if a point at integer coordinates
-    \((x,y)\) lies within a closed shape. If it does, \(x\) must be in the
-    middle of one of the horizontal <code>intervals(y)</code>, and therefore
-    there must be an odd number of intersections on either side &mdash; this is
-    all we need for a hit-test!
+    \((x,y)\) lies in the interior. If it does, \(x\) must be in the middle of
+    some interval in <code>curve.intervals(y)</code>, and therefore there must
+    be an odd number of intersections on either side &mdash; this is all we need
+    for a hit-test!
   </p>
   <blockquote>
     <em>
       Given a point \((x_p,y_p)\), count the number of times the scan line \(y =
-      y_p\) intersects the boundary at a \(x > x_p\) (or equivalently, \(x \leq
-      x_p\)). The point is inside the boundary if and only if the number is odd.
+      y_p\) intersects the curve at a \(x > x_p\) (or equivalently, \(x \leq
+      x_p\)). The point is on the interior if and only if the number is odd.
     </em>
   </blockquote>
-  But how do we find those intersection points?
+  Now the question is: How do we find <code>curve.intervals(y)</code>?
 
   <h2>Polygons</h2>
 
   <p>
-    One possible way is to approximate arbitrary shapes with polygons, so the
-    task now becomes finding line segments that cross the scan line. Suppose a
-    line segment has two endpoints \((x_1,y_1)\) (inclusive) and \((x_2, y_2)\)
-    (exclusive), where \(y_1 < y_2\). We know a scan line \(y\) can only cross
-    the line segment if \(y_1 \leq y < y_2\), and also $$intersection=\left(x_1
-    + \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The slope of line segment
-    $$k=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how much \(x\) changes when we
-    increment \(y\). Using the slope we can jump along the line segment:
-    \((x,y), (x+k, y+1), (x + 2k, y+2), \dots\)
+    As a starting point, let's look at a simple case: polygons. With polygons,
+    our task becomes finding line segments that cross the scan line at \(y\).
+    Suppose a line segment has two endpoints \((x_1,y_1)\) (inclusive) and
+    \((x_2, y_2)\) (exclusive), where \(y_1 < y_2\). We know a scan line \(y\)
+    can only cross the line segment if \(y_1 \leq y < y_2\), and also
+    $$intersection=\left(x_1 + \frac{x_2-x_1}{y_2-y_1}(y-y_1), y\right).$$ The
+    slope of line segment $$k=\frac{x_2-x_1}{y_2-y_1}$$ tells us the how much
+    \(x\) changes when we increment \(y\). Using the slope we can walk the line
+    segment: \((x,y), (x+k, y+1), (x + 2k, y+2), \dots\)
   </p>
   <p>Here is the scan-line rasterization algorithm:</p>
   <blockquote>
@@ -225,7 +234,7 @@ for y in y1...y2 {
       >Keep track of the set of edges that intersect the scan line along with
       their respective intersection points. In each iteration:
       <ol>
-        <li>Traverse each horizontal interval at current \(y\).</li>
+        <li>Traverse each interval at current \(y\) and color each pixel.</li>
         <li>Increment \(y\), then</li>
         <ul>
           <li>Discard edges that no longer intersect the scan line.</li>
@@ -252,37 +261,41 @@ for y in y1...y2 {
     transformations to each vertex before we rasterize.
   </p>
   <p>
-    Mathematically, it's more convenient to use homogeneous coordinates \((wx,
-    wy, w)\) to represent a point \((x,y)\) on screen, because it turns
+    Mathematically, it's conventional and more convenient to use homogeneous
+    coordinates \((wx, wy, w) \in \mathbb{RP}^2\) in projective space to
+    represent a point \((x,y) \in \mathbb{R}^2 \) &mdash; this is how CSS
+    <code>transform</code> works under the hood&mdash; because it turns
     translation, rotation and scaling all into composable \(3\times3\) matrices:
     $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
     \end{pmatrix},\ R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
     \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix},\ S_{c} =
     \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1 \end{pmatrix}$$ Try
-    dragging the square below to see the transforms in action:
+    dragging the square below to see composed transforms in action:
   </p>
 
   <canvas id="transform"></canvas>
   <script type="module" src="./demo/transform.js"></script>
 
-  <h2>Curves (I)</h2>
+  <h2>Discretization</h2>
   <p>
-    By sampling discrete points \(p_1, p_2, ...p_N\) along a curve, we can turn
-    any shape into a polygon. When the sampling becomes so fine-grained that the
-    line segments become subpixel, a polyline would be indistinguishable from a
-    smooth curve.
+    Back to the question of finding <code>curve.intervals(y)</code> for any
+    parametric curves. Now that we've covered the case of polygons, there is a
+    simple solution: Just convert the curve into a polygon by discrete sampling!
+    When the sampling rate becomes so fine-grained that the resulting line
+    segments are subpixel, a polygon would be indistinguishable from a smooth
+    curve.
   </p>
   <p>
-    Let's take elliptic arcs as an eample. Suppose we want to draw an arc from
-    angle \(\phi_1\) to \(\phi_2\) on a ellipse centered at \((x,y)\) with
-    semi-major axis \(a\) and semi-minor axis \(b\) and rotated by an angle
+    Let's take elliptic arcs as a concrete eample. Suppose we want to draw an
+    arc from angle \(\phi_1\) to \(\phi_2\) on a ellipse centered at \((x,y)\)
+    with semi-major axis \(a\) and semi-minor axis \(b\) and rotated by an angle
     \(\theta\). We can sample \(N + 1\) points using the formula:
     $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T_{x,y} \cdot R_{\theta} \cdot
     \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 - \phi_1}{N}\right),
     b\sin\left(\phi_1 + i\cdot\frac{\phi_2 - \phi_1}{N}\right)\right)^\top$$
   </p>
   <p>
-    Try increasing \(N\) below to see how a polygon turns into a smooth shape.
+    Try increasing \(N\) below to see how the polygon turns into a smooth curve.
   </p>
 
   <canvas id="ellipse"></canvas>
@@ -300,14 +313,13 @@ for y in y1...y2 {
   </div>
   <script type="module" src="./demo/ellipse.js"></script>
 
-  <h2>Curves (II)</h2>
+  <h2>Strokes</h2>
   <p>
-    Ellipses are not just interesting in their own right: We can actually draw
-    thick curves as a sequences of skinny rectangles joined by circles, which
-    are essentially a special case of ellipses.
-  </p>
-  <p>
-    Try drawing on the canvas below. Have you noticed the circles and
+    Why such a convoluted example? Well, ellipses are not just interesting in
+    their own right. We can use them to render 1D (okay, not really) objects!
+    How? Well, we can stroking a thick curve simply by filling a sequences of
+    skinny rectangles joined by circles, which are, of course, a special case of
+    ellipses! Try drawing on the canvas below. Have you noticed the circles and
     rectangles? What about when you increase the stroke width?
   </p>
 
@@ -320,18 +332,17 @@ for y in y1...y2 {
 
   <p></p>
 
-  <h2>Gradients</h2>
+  <h2>Color Gradients</h2>
 
   <p>
-    To make our polygons slightly more interesting, let's create some color
-    gradients using a little bit of algebra. Suppose we want the color to
-    transition from \(C_1\) to \(C_2\). We just need to take weighted averages
-    $$interpolate(C_1, C_2, t) = (1-t) \cdot C_1 + t \cdot C_2$$ at each pixel,
-    and vary the parameter \(t\) based on some kind of distance. Take a look at
-    the two types of color gradients below, computed as follows:
-    $$RadialGradient(x,y) = interpolate\left(C_1, C_2, \frac{\sqrt{(x-x_o)^2 +
-    (y-y_o)^2}}{r}\right)$$ $$LinearGradient(x,y) = interpolate\left(C_1, C_2,
-    \frac{y - y_{min}}{y_{max} - y_{min}}\right)$$
+    To make fancier polygons, let's apply some color gradients! Suppose we want
+    the color to transition from \(C_1\) to \(C_2\). We just need to take a
+    weighted average $$interpolate(C_1, C_2, t) = (1-t) \cdot C_1 + t \cdot
+    C_2$$ at each pixel, and vary the parameter \(t\) based on some kind of
+    distance measurement. Take a look at the two types of color gradients below,
+    computed as follows: $$RadialGradient(x,y) = interpolate\left(C_1, C_2,
+    \frac{\sqrt{(x-x_o)^2 + (y-y_o)^2}}{r}\right)$$ $$LinearGradient(x,y) =
+    interpolate\left(C_1, C_2, \frac{y - y_{min}}{y_{max} - y_{min}}\right)$$
   </p>
 
   <canvas id="gradient"></canvas>
@@ -341,15 +352,16 @@ for y in y1...y2 {
   </div>
   <script type="module" src="./demo/gradient.js"></script>
   <p>
-    Gradients are just one example of what's called
+    Color gradient is an example of so-called
     <em>linear interpolation</em>.
   </p>
 
-  <h2>Bézier (I)</h2>
+  <h2>Bézier Curves</h2>
   <p>
     We've seen that interpolating colors based on position produces color
-    gradients. Interestingly, interpolating positions (recursively) based on a
-    "time" parameter produces smooth curves &mdash; the famous
+    gradients. Interestingly, interpolating positions recursively based on a
+    parameter shared by all levels of the recursion produces smooth curves
+    &mdash; the ubiquitous
     <em>Bézier curves</em>.
   </p>
   <p>
@@ -367,24 +379,18 @@ for y in y1...y2 {
   </blockquote>
 
   <p>
-    Try clicking on the canvas below to generate a Bézier curve of any order.
-    The color of the moving circle is also linearly interpolated based on
-    "time".
+    Try clicking on the canvas below to stroke a Bézier curve (or any order).
+    The color of the moving circle is linearly interpolated based on \(t\) as
+    well.
   </p>
 
   <canvas id="animation"></canvas>
   <script type="module" src="./demo/animation.js"></script>
 
-  <h2>Bézier (II)</h2>
   <p>
-    To rasterize a region enclosed by Bézier curves, we can apply the same trick
-    we used before for elliptic arcs &mdash; just sample a few points and
-    rasterize a polygon instead.
-  </p>
-  <p>
-    Try creating some Bézier shapes below. Note that after placing the starting
-    point, you need to add \(N\) control points for each new "Bézier edge" of
-    order \(N\), i.e., 2 for quadratic and 3 for cubic.
+    Now try creating some filled shapes made up of Bézier curves. (Note: after
+    placing the starting point, you need to add \(N\) control points for each
+    new Bézier segment of order \(N\), i.e., 2 for quadratic and 3 for cubic.)
   </p>
 
   <h4>Quadratic Bézier</h4>
@@ -394,15 +400,15 @@ for y in y1...y2 {
 
   <h2>Text</h2>
   <p>
-    What are these weird shapes good for? As it turns out, every single
-    character on this page &mdash; or indeed, everything that uses
+    Why do we care about these weird shapes? As it turns out, every single
+    character on this web page &mdash; or indeed, everything that uses
     OpenType/TrueType fonts &mdash; is made of nothing but linear (i.e. lines
     segments), quadratic and cubic Bézier curves!
   </p>
   <p>
-    Take a look at the text below &mdash; it's produced by the exact same
-    JavaScript implementatation of scan-line rasterization that we used earlier
-    to draw our first polygon!
+    Take a look at the text below &mdash; it's being rendered by our
+    implementatation of scan-line rasterization, the same one we used earlier to
+    draw our first polygon!
   </p>
   <script type="module" src="./demo/bezier.js"></script>
   <canvas id="font"></canvas>
@@ -418,14 +424,14 @@ for y in y1...y2 {
 
   <h2>Layers</h2>
   <p>
-    Elements on screen form a hierarchy &mdash; shapes contain other shapes, and
-    when a containing shape moves, everthing inside moves along with it. This
-    hierarchical relationship is best represented as a tree.
+    A GUI consists of a containment hierarchy of geometries, and when a
+    containing geometry is transformed, the same transformation applies to
+    everthing inside. This hierarchy is naturally represented as a tree.
   </p>
   <p>
-    Because containers typically lie underneath the things they contain, nodes
-    higher up (reminder: it's upside-down) in the tree must be drawn first,
-    which means we need to perform a pre-order traversal:
+    Visually, containers should lie beneath the things they contain, so nodes
+    closer to the root must be drawn first. In other words, we need to perform a
+    pre-order traversal:
   </p>
   <blockquote>
     <pre>
@@ -440,9 +446,10 @@ fn draw(node) {
 
   <p>
     For hit-testing, we need to identify the topmost polygon under the pointer.
-    This is easy if we've recorded polygons in the order they were drawn, as we
-    could simply search through the records <em>backwards</em> for the
-    <em>last</em> drawn polygon that contains the cursor position.
+    This is easy if we have recorded the polygons in the order they were drawn,
+    in which case we could simply search through the records
+    <em>backwards</em> for the last drawn polygon that contains the cursor
+    position.
   </p>
 
   <p>
@@ -463,11 +470,12 @@ fn draw(node) {
 
   <h2>Blending</h2>
   <p>
-    What if we want to see through the layers? This is where the alpha channel
-    (A) in RGBA comes in. There are many ways to blend two colors, one of which
-    is the so-called "over" operator. Similar to color gradients and Bézier
-    curves, the "over" operator computes a weighted average of the two colors
-    \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
+    If we want to see through the layers, we need to "blend" pixels from
+    different layers. This is where the alpha channel (A) in RGBA comes in.
+    There are many ways to add two colors together, one of which is the
+    so-called "over" operator. Quite similar to what we did for color gradients
+    and Bézier curves, the "over" operator computes a weighted average of two
+    colors \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
     contributions to the final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b)
     = \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
@@ -478,22 +486,22 @@ fn draw(node) {
   </div>
   <script type="module" src="./demo/alpha.js"></script>
   <p>
-    But this is not the end of the story: To stack transparent layers on top of
-    each other, we need more than just alpha blending, otherwise it'd be
-    difficult to tell which layer is on the top and which is on the bottom.
+    But as you might have noticed, with only alpha blending, it's still quite
+    difficult to tell the stacking order of the layers.
   </p>
 
   <h2>Filtering</h2>
   <p>
-    One solution is to apply a "frosted glass" post-processing effect. To do
-    this, we need to "convolve" the rasterized image. The word "convolution"
-    might sound fancy, but it really is just a weighted average (yes, again) of
-    the neighborhood around each pixel. Formally, with a "kernel" \(G(u,v)\):
-    $$C = \sum_{u=-k}^{k} \sum_{v=-k}^{k}G(u,v)$$ $$Output(x,y) =
-    \frac{1}{C}\sum_{u=-k}^{k} \sum_{v=-k}^{k} G(u,v)Input(x-u, y-v).$$
+    One solution is to apply a "frosted glass" post-processing effect after
+    blending. To do so, we need to "convolve" the image with a "kernel" &mdash;
+    the word "convolution" might sound fancy, but it really is just a weighted
+    average (yes, again) of the neighborhood surrounding each pixel, using the
+    weights given by a "kernel" function \(G(u,v)\): $$C = \sum_{u=-k}^{k}
+    \sum_{v=-k}^{k}G(u,v)$$ $$Output(x,y) = \frac{1}{C}\sum_{u=-k}^{k}
+    \sum_{v=-k}^{k} G(u,v)Input(x-u, y-v).$$
   </p>
   <p>
-    The kernel used for blurring is usually the 2D Gaussian function $$G(x,y) =
+    The kernel used for blurring is the 2D Gaussian function $$G(x,y) =
     \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right),$$ and the
     result is the so-called <em>Gaussian blur</em>.
   </p>
@@ -510,7 +518,7 @@ fn draw(node) {
 
   <h2>Acceleration</h2>
   <p>
-    So far, we've been tirelessly looping through all pixels on the CPU for
+    So far, we've been iterating through all pixels sequentially on the CPU for
     every single frame! This approach obvioiusly doesn't scale well with higher
     screen resolutions. Fortunately, for most of the steps above we can actually
     process all pixels

@@ -7,7 +7,7 @@ import { makeCurve } from "../modules/curve.js";
 const canvas = document.querySelector("#animation");
 
 const controlPoints = [];
-const duration = 5;
+const duration = 10;
 let now = 0;
 
 setup(
