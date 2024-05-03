@@ -7,7 +7,7 @@
 
   <style>
     body {
-      max-width: 640px;
+      max-width: 600px;
       padding: 40px;
       margin: auto;
       overflow-x: hidden;
@@ -105,11 +105,10 @@
 
   <p>
     How do graphical user interfaces operate at the level of primitive
-    operations (i.e. bytes and instructions)? How exactly does a computer, as
-    its name suggests,
+    operations (i.e. bytes and instructions)? How exactly could a computer
     <em>compute</em> a vector-based GUI into existence from thin air? How can
-    vivid visual metaphors arise algorithmically solely from boring arithmetic
-    and logical manipulations?
+    vivid visual metaphors arise algorithmically from just arithmetic and
+    logical manipulations?
   </p>
   <p>
     This incomplete article is my first attempt to consolidate the pieces of
@@ -155,16 +154,17 @@ fn draw() {
   </blockquote>
   <p>
     The main complexity lies in the <code>draw()</code> and
-    <code>pick(event.xy)</code> functions. As we'll see, by implementing
-    <code>draw()</code>, we'll get a solution for
-    <code>pick(event.xy)</code> almost for free.
+    <code>pick(event.xy)</code> functions, and as we'll see later, they are
+    actually two sides of the same coin. Once we implement <code>draw()</code>,
+    we'll get <code>pick(event.xy)</code> almost for free.
   </p>
 
   <h2>Closed Curves</h2>
   <p>
     At the core of 2D graphics is the mathematical concept of
     <em>"the interior of closed curves"</em>, such as circles and rectangles. We
-    know how to fill the interior of a rectangle with a simple nested loop:
+    already know how to fill the interior of a rectangle with a simple nested
+    loop:
   </p>
   <blockquote>
     <pre>
@@ -179,11 +179,12 @@ fn fill(rect) {
     >
   </blockquote>
   <p>
-    This idea can be generalized to all closed curves, except that for each
-    \(y\) the horizontal scan line could now enter and leave its interior any
-    number of times. Suppose it crosses the curve at \(x_1, x_2, ...x_n\). It
-    can be proved that \(n\) must be even, so all we need to do is to fill the
-    intervals \([x_1, x_2), [x_3, x_4), \dots, [x_{n-1}, x_n)\). In other words,
+    This idea can actually be generalized to all closed curves, except that for
+    each \(y\) the horizontal scan line could now enter and leave a curve's
+    interior any number of times. Suppose it crosses the curve at \(x_1, x_2,
+    ...x_n\). It can be proved that \(n\) must be even, so all we need to do is
+    iterating through all the intervals \([x_1, x_2), [x_3, x_4), \dots
+    [x_{n-1}, x_n)\). In other words,
   </p>
   <blockquote>
     <pre>
@@ -202,9 +203,9 @@ fn fill(curve) {
   <p>
     Using the same logic, we can check if a point at integer coordinates
     \((x,y)\) lies in the interior. If it does, \(x\) must be in the middle of
-    some interval in <code>curve.intervals(y)</code>, and therefore there must
-    be an odd number of intersections on either side &mdash; this is all we need
-    for a hit-test!
+    one of <code>curve.intervals(y)</code>, and therefore there must be an odd
+    number of intersections on either side &mdash; this is all we need for a
+    hit-test!
   </p>
   <blockquote>
     <em>
@@ -246,9 +247,9 @@ fn fill(curve) {
   </blockquote>
   <p>
     The canvas below will draw a polygon from the points you click on, using a
-    JavaScript implementation of this algorithm. (You must pick at least 3
-    points to draw a polygon!) The polygon will light up in red when you hover
-    over it.
+    JavaScript implementation of this algorithm. The polygon will light up in
+    red when you hover over it. (Note: You must pick at least 3 points to draw a
+    polygon.)
   </p>
 
   <canvas id="polygon"></canvas>
@@ -263,8 +264,9 @@ fn fill(curve) {
   <p>
     Mathematically, it's conventional and more convenient to use homogeneous
     coordinates \((wx, wy, w) \in \mathbb{RP}^2\) in projective space to
-    represent a point \((x,y) \in \mathbb{R}^2 \) &mdash; this is how CSS
-    <code>transform</code> works under the hood&mdash; because it turns
+    represent a point \((x,y) \in \mathbb{R}^2 \) on screen &mdash; this is in
+    fact how CSS
+    <code>transform</code> works under the hood &mdash; because it turns
     translation, rotation and scaling all into composable \(3\times3\) matrices:
     $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
     \end{pmatrix},\ R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
@@ -281,15 +283,14 @@ fn fill(curve) {
     Back to the question of finding <code>curve.intervals(y)</code> for any
     parametric curves. Now that we've covered the case of polygons, there is a
     simple solution: Just convert the curve into a polygon by discrete sampling!
-    When the sampling rate becomes so fine-grained that the resulting line
-    segments are subpixel, a polygon would be indistinguishable from a smooth
-    curve.
+    When the sampling rate becomes high enough that the resulting line segments
+    become subpixel, a polygon would be indistinguishable from a smooth curve.
   </p>
   <p>
     Let's take elliptic arcs as a concrete eample. Suppose we want to draw an
-    arc from angle \(\phi_1\) to \(\phi_2\) on a ellipse centered at \((x,y)\)
-    with semi-major axis \(a\) and semi-minor axis \(b\) and rotated by an angle
-    \(\theta\). We can sample \(N + 1\) points using the formula:
+    arc from angle \(\phi_1\) to \(\phi_2\) on a ellipse with semi-major axis
+    \(a\) and semi-minor axis \(b\), centered at \((x,y)\) and rotated by an
+    angle \(\theta\). We can sample \(N + 1\) points:
     $$\begin{pmatrix}x_i\\y_i\end{pmatrix} = T_{x,y} \cdot R_{\theta} \cdot
     \left(a\cos\left(\phi_1 + i \cdot\frac{\phi_2 - \phi_1}{N}\right),
     b\sin\left(\phi_1 + i\cdot\frac{\phi_2 - \phi_1}{N}\right)\right)^\top$$
@@ -315,12 +316,12 @@ fn fill(curve) {
 
   <h2>Strokes</h2>
   <p>
-    Why such a convoluted example? Well, ellipses are not just interesting in
-    their own right. We can use them to render 1D (okay, not really) objects!
-    How? Well, we can stroking a thick curve simply by filling a sequences of
-    skinny rectangles joined by circles, which are, of course, a special case of
-    ellipses! Try drawing on the canvas below. Have you noticed the circles and
-    rectangles? What about when you increase the stroke width?
+    Ellipses are not just interesting in their own right. We can actually use
+    them to render 1D (well, not really) objects: We can stroke a thick curve
+    simply by filling a sequences of skinny rectangles joined by circles, which
+    are, of course, a special case of ellipses! Try drawing on the canvas below.
+    Have you noticed the circles and rectangles? What about when you increase
+    the line width?
   </p>
 
   <canvas id="curve"></canvas>
@@ -339,7 +340,7 @@ fn fill(curve) {
     the color to transition from \(C_1\) to \(C_2\). We just need to take a
     weighted average $$interpolate(C_1, C_2, t) = (1-t) \cdot C_1 + t \cdot
     C_2$$ at each pixel, and vary the parameter \(t\) based on some kind of
-    distance measurement. Take a look at the two types of color gradients below,
+    distance metric. Take a look at the two types of color gradients below,
     computed as follows: $$RadialGradient(x,y) = interpolate\left(C_1, C_2,
     \frac{\sqrt{(x-x_o)^2 + (y-y_o)^2}}{r}\right)$$ $$LinearGradient(x,y) =
     interpolate\left(C_1, C_2, \frac{y - y_{min}}{y_{max} - y_{min}}\right)$$
@@ -358,7 +359,7 @@ fn fill(curve) {
 
   <h2>Bézier Curves</h2>
   <p>
-    We've seen that interpolating colors based on position produces color
+    We've seen that interpolating colors based on position gives us color
     gradients. Interestingly, interpolating positions recursively based on a
     parameter shared by all levels of the recursion produces smooth curves
     &mdash; the ubiquitous
@@ -367,8 +368,7 @@ fn fill(curve) {
   <p>
     Bézier curves can be constructed iteratively using the
     <em>De Casteljau's algorithm</em>: Given control points \(p^{(0)}_0,
-    p^{(0)}_1, \dots p^{(0)}_n\), we can find point \(B(t)\) on the curve in the
-    following way:
+    p^{(0)}_1, \dots p^{(0)}_n\), we can find point \(B(t)\) on the curve:
   </p>
   <blockquote>
     <em
@@ -379,18 +379,18 @@ fn fill(curve) {
   </blockquote>
 
   <p>
-    Try clicking on the canvas below to stroke a Bézier curve (or any order).
-    The color of the moving circle is linearly interpolated based on \(t\) as
-    well.
+    Try clicking on the canvas below to stroke a Bézier curve. The color of the
+    moving circle is linearly interpolated based on \(t\) as well.
   </p>
 
   <canvas id="animation"></canvas>
   <script type="module" src="./demo/animation.js"></script>
 
   <p>
-    Now try creating some filled shapes made up of Bézier curves. (Note: after
-    placing the starting point, you need to add \(N\) control points for each
-    new Bézier segment of order \(N\), i.e., 2 for quadratic and 3 for cubic.)
+    Now try creating some filled shapes made up of Bézier curve segments. (Note:
+    after placing the starting point, you need to add \(N\) control points for
+    each new Bézier segment of order \(N\), e.g., 2 for quadratic and 3 for
+    cubic.)
   </p>
 
   <h4>Quadratic Bézier</h4>
@@ -400,10 +400,10 @@ fn fill(curve) {
 
   <h2>Text</h2>
   <p>
-    Why do we care about these weird shapes? As it turns out, every single
-    character on this web page &mdash; or indeed, everything that uses
-    OpenType/TrueType fonts &mdash; is made of nothing but linear (i.e. lines
-    segments), quadratic and cubic Bézier curves!
+    What are these wavy curves good for? Yes, every single character on this web
+    page &mdash; or indeed, everything that uses OpenType/TrueType fonts &mdash;
+    is made of nothing but linear (i.e. lines segments), quadratic and cubic
+    Bézier curves!
   </p>
   <p>
     Take a look at the text below &mdash; it's being rendered by our
@@ -445,16 +445,16 @@ fn draw(node) {
   </blockquote>
 
   <p>
-    For hit-testing, we need to identify the topmost polygon under the pointer.
+    For hit-testing, we need to identify the topmost polygon under the cursor.
     This is easy if we have recorded the polygons in the order they were drawn,
     in which case we could simply search through the records
     <em>backwards</em> for the last drawn polygon that contains the cursor
-    position.
+    position. We already know how to do that!
   </p>
 
   <p>
-    Now you know how to roll your own <code>&lt;buton/&gt;</code>'s and
-    <code>&lt;div/&gt;</code>'s!
+    So now you know how to roll your own <code>&lt;button/&gt;</code>'s
+    <strong>completely</strong> from scratch!
   </p>
 
   <canvas id="recursion"></canvas>
@@ -470,12 +470,12 @@ fn draw(node) {
 
   <h2>Blending</h2>
   <p>
-    If we want to see through the layers, we need to "blend" pixels from
-    different layers. This is where the alpha channel (A) in RGBA comes in.
-    There are many ways to add two colors together, one of which is the
-    so-called "over" operator. Quite similar to what we did for color gradients
-    and Bézier curves, the "over" operator computes a weighted average of two
-    colors \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
+    If we want to see through overlapping layers, we need to "blend" pixels from
+    those layers. This is where the alpha channel (A) in RGBA comes in. There
+    are many ways to add two colors together, one of which is the so-called
+    "over" operator. Quite similar to what we did for color gradients and Bézier
+    curves, the "over" operator computes a weighted average of two colors
+    \((r_1, g_1, b_1, a_1)\) and \((r_2, g_2, b_2, a_2)\) based on their
     contributions to the final alpha value: $$ a = a_1 + a_2 (1-a_1)$$ $$(r,g,b)
     = \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
@@ -487,14 +487,14 @@ fn draw(node) {
   <script type="module" src="./demo/alpha.js"></script>
   <p>
     But as you might have noticed, with only alpha blending, it's still quite
-    difficult to tell the stacking order of the layers.
+    difficult to tell the stacking order of things.
   </p>
 
   <h2>Filtering</h2>
   <p>
     One solution is to apply a "frosted glass" post-processing effect after
     blending. To do so, we need to "convolve" the image with a "kernel" &mdash;
-    the word "convolution" might sound fancy, but it really is just a weighted
+    the words might sound fancy, but we are really just calculating a weighted
     average (yes, again) of the neighborhood surrounding each pixel, using the
     weights given by a "kernel" function \(G(u,v)\): $$C = \sum_{u=-k}^{k}
     \sum_{v=-k}^{k}G(u,v)$$ $$Output(x,y) = \frac{1}{C}\sum_{u=-k}^{k}
@@ -503,10 +503,8 @@ fn draw(node) {
   <p>
     The kernel used for blurring is the 2D Gaussian function $$G(x,y) =
     \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right),$$ and the
-    result is the so-called <em>Gaussian blur</em>.
-  </p>
-  <p>
-    Try dragging the lens below across the image to see Gaussian blur in action:
+    result is the so-called <em>Gaussian blur</em>. Try dragging the lens below
+    across the image to see Gaussian blur in action:
   </p>
 
   <canvas id="glass"></canvas>
@@ -521,7 +519,7 @@ fn draw(node) {
     So far, we've been iterating through all pixels sequentially on the CPU for
     every single frame! This approach obvioiusly doesn't scale well with higher
     screen resolutions. Fortunately, for most of the steps above we can actually
-    process all pixels
+    process pixels
     <em>in parallel</em> &mdash; GPU to the rescue!
   </p>
 
