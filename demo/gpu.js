@@ -60,7 +60,7 @@ gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 0, 0);
 
 const indexBuffer = gl.createBuffer();
 
-const text = "To be continued...";
+const text = "GPU to the rescue!";
 const initialSize = 80;
 
 let visible = false;
@@ -92,7 +92,7 @@ setInterval(() => {
       const polygons1 = makeText(
         text,
         canvas.width / 2 - (text.length * size) / 3.8,
-        canvas.height / 2 - size / 3,
+        canvas.height / 2,
         size,
         FontBook.NotoSans,
         3

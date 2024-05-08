@@ -3,7 +3,7 @@ import { Edge, Polygon } from "../modules/polygon.js";
 
 const canvas = document.querySelector("#transform");
 
-const S = 20;
+const S = 40;
 const p1 = new Vec2(-S, -S);
 const p2 = new Vec2(S, -S);
 const p3 = new Vec2(S, S);

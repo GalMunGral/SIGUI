@@ -214,18 +214,6 @@ const UI = new UIRenderer(
   new Box([new Button("HOVER"), new Button("CLICK")])
 );
 
-buttonWidthInput.value = Button.width;
-buttonWidthInput.oninput = () => {
-  Button.width = +buttonWidthInput.value;
-  UI.update();
-};
-
-buttonHeightInput.value = Button.height;
-buttonHeightInput.oninput = () => {
-  Button.height = +buttonHeightInput.value;
-  UI.update();
-};
-
 buttonRadiusInput.value = Button.radius;
 buttonRadiusInput.oninput = () => {
   Button.radius = +buttonRadiusInput.value;

@@ -38,7 +38,7 @@ setup(
     });
 
     simplePolygon(sampleCircle(20))
-      .scale(50)
+      .scale(10)
       .translate(x, y)
       .fill(buffer, () => color);
 

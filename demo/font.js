@@ -4,8 +4,9 @@ import { parse } from "https://unpkg.com/opentype.js/dist/opentype.module.js";
 
 const canvas = document.querySelector("#font");
 const inputSize = document.querySelector("#font-size");
-const inputText = document.querySelector("#font-text");
 const fontInput = document.querySelector("#font-file");
+
+const text = "Everything is a polygon!";
 
 const highlightColor = new Color(0.6, 0.0, 0.0);
 
@@ -14,10 +15,6 @@ let font = FontBook.Arizonia;
 let dirty = true;
 
 inputSize.oninput = () => {
-  dirty = true;
-};
-
-inputText.oninput = () => {
   dirty = true;
 };
 
@@ -35,7 +32,7 @@ setup(
       dirty = false;
       buffer.clear();
       const textBoundary = makeText(
-        inputText.value,
+        text,
         100,
         buffer.height / 2,
         +inputSize.value * devicePixelRatio,
