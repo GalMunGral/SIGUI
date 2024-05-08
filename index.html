@@ -263,10 +263,10 @@ fn draw(curve):
   <p>
     Strictly speaking, the transformations are only linear if we use homogeneous
     coordinates \((wx, wy, w) \in \mathbb{RP}^2\) in projective space to
-    represent an on-screen point \((x,y) \in \mathbb{R}^2 \) in Euclidean space.
-    The advantage of using homogeneous coordinates is that 2D translation,
-    rotation and scaling are all represented as composable \(3\times3\)
-    matrices: $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
+    represent a point \((x,y) \in \mathbb{R}^2 \) in Euclidean space. The
+    advantage of using homogeneous coordinates is that 2D translation, rotation
+    and scaling are all represented as composable \(3\times3\) matrices:
+    $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
     \end{pmatrix},\ R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
     \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix},\ S_{c} =
     \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1 \end{pmatrix}.$$ This is
