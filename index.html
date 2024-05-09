@@ -349,10 +349,10 @@ fn draw(curve):
     Before we transition to text rendering, let's take a brief detour and take a
     look at color gradients! Suppose we want the color to change from \(C_1\) to
     \(C_2\). All we need to do is to
-    <em>"linearly interpolate"</em> &mdash; i.e. to calculate a weighted average
-    of &mdash; the two colors at each pixel: $$interpolate(C_1, C_2, t) = (1-t)
-    \cdot C_1 + t \cdot C_2,$$ where the parameter \(t\) varies with some sort
-    of distance metric across pixels.
+    <em>"linearly interpolate"</em> &mdash; i.e., to calculate a weighted
+    average of &mdash; the two colors at each pixel: $$interpolate(C_1, C_2, t)
+    = (1-t) \cdot C_1 + t \cdot C_2,$$ where the parameter \(t\) varies with
+    some sort of distance metric across pixels.
   </p>
 
   <div class="interactive">
@@ -392,7 +392,9 @@ fn draw(curve):
 
   <div class="interactive">
     <div class="prompt">
-      <p>Click on this canvas to draw a Bézier curve from control points.</p>
+      <p>
+        Click on this canvas to place the control points for your Bézier curve!
+      </p>
     </div>
 
     <canvas id="animation"></canvas>
@@ -426,7 +428,7 @@ fn draw(curve):
   <script type="module" src="./demo/font.js"></script>
 
   <h2>View Tree</h2>
-  <p>Let's now put everything together.</p>
+  <p>Let's put everything together.</p>
   <p>
     A GUI mainly consists of a containment hierarchy of geometries, which are
     best represented as a <em>tree</em>. Visually, containers are placed beneath
