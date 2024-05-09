@@ -249,7 +249,7 @@ fn draw(curve):
   <div class="interactive">
     <div class="prompt">
       <p>This canvas implements the rasterization algorithm described above.</p>
-      <p>Click on the canvas to select points. You must pick at least 3.</p>
+      <p>Click on the canvas to place your vertices. You'll need at least 3.</p>
     </div>
     <canvas id="polygon"></canvas>
     <script type="module" src="./demo/polygon.js"></script>
@@ -263,15 +263,14 @@ fn draw(curve):
   </p>
   <p>
     Strictly speaking, the transformations are only linear if we use homogeneous
-    coordinates \((wx, wy, w) \in \mathbb{RP}^2\) in projective space to
+    coordinates \((wx, wy, w) \in \mathbb{RP}^2\) in the projective space to
     represent a point \((x,y) \in \mathbb{R}^2 \) in Euclidean space. The
-    advantage of using homogeneous coordinates is that 2D translation, rotation
-    and scaling are all represented as composable \(3\times3\) matrices:
-    $$T_{x,y} = \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1
-    \end{pmatrix},\ R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\
-    \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix},\ S_{c} =
-    \begin{pmatrix} c & 0 & 0 \\ 0 & c & 0 \\ 0 & 0 & 1 \end{pmatrix}.$$ This is
-    how CSS
+    advantage of using this framework is that 2D translation, rotation and
+    scaling are all represented as composable \(3\times3\) matrices: $$T_{x,y} =
+    \begin{pmatrix} 1 & 0 & x \\ 0 & 1 & y \\ 0 & 0 & 1 \end{pmatrix},\
+    R_{\theta} = \begin{pmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta &
+    \cos\theta & 0 \\ 0 & 0 & 1 \end{pmatrix},\ S_{c} = \begin{pmatrix} c & 0 &
+    0 \\ 0 & c & 0 \\ 0 & 0 & 1 \end{pmatrix}.$$ This is how CSS
     <code>transform</code> works under the hood.
   </p>
 
@@ -303,7 +302,9 @@ fn draw(curve):
 
   <div class="interactive">
     <div class="prompt">
-      <p>Try increasing the sampling rate \(N\) to smooth out the curve!</p>
+      <p>
+        You can smooth out this curve by increasing the sampling rate \(N\)!
+      </p>
     </div>
     <canvas id="ellipse"></canvas>
   </div>
@@ -324,14 +325,17 @@ fn draw(curve):
   <h2>Stroking</h2>
   <p>
     Ellipses are not just interesting in their own right &mdash; thick curves,
-    which are conceptually 1D but in fact 2D for all practical purposes, could
-    be rendered by drawing a sequence of skinny rectangles joined by circles,
-    which are, of course, a special case of ellipses!
+    which are conceptually 1D but in fact 2D for practical purposes, could be
+    rendered by drawing a sequence of skinny rectangles joined by circles, which
+    are, of course, a special case of ellipses!
   </p>
 
   <div class="interactive">
     <div class="prompt">
-      <p>Write something here. Can you spot the circles and rectangles?</p>
+      <p>
+        Try writing with your mouse/trackpad here. Can you spot the circles and
+        rectangles?
+      </p>
       <p>If not, increasing the line width might help.</p>
     </div>
     <canvas id="curve"></canvas>
@@ -345,9 +349,9 @@ fn draw(curve):
   <h2>Color Gradients</h2>
 
   <p>
-    I intended to transition (eh?) to text rendering, but let's take a brief
-    detour and take a look at color gradients instead! Suppose we want the color
-    to change from \(C_1\) to \(C_2\). All we need to do is to
+    Before we transition (eh?) to text rendering, let's take a brief detour and
+    take a look at color gradients ! Suppose we want the color to change from
+    \(C_1\) to \(C_2\). All we need to do is to
     <em>"linearly interpolate"</em> &mdash; i.e. to calculate a weighted average
     of &mdash; the two colors at each pixel: $$interpolate(C_1, C_2, t) = (1-t)
     \cdot C_1 + t \cdot C_2,$$ where the parameter \(t\) varies with some sort
@@ -400,10 +404,10 @@ fn draw(curve):
 
   <h2>Fonts</h2>
   <p>
-    In case you haven't realized by now, every single letter you are reading on
-    this page &mdash; or indeed, any text that uses OpenType/TrueType fonts
-    &mdash; is made of nothing but linear (lines segments), quadratic and cubic
-    Bézier curves!
+    In case you haven't guessed it by now, every single letter you are reading
+    on this page at this moment &mdash; or indeed, any text that uses
+    OpenType/TrueType fonts &mdash; is made of nothing but linear (lines
+    segments), quadratic and cubic Bézier curves!
   </p>
 
   <div class="interactive">
@@ -425,6 +429,7 @@ fn draw(curve):
   <script type="module" src="./demo/font.js"></script>
 
   <h2>View Tree</h2>
+  <p>Let's now put everything together.</p>
   <p>
     A GUI mainly consists of a containment hierarchy of geometries, which are
     best represented as a <em>tree</em>. Visually, containers are placed beneath
@@ -451,7 +456,7 @@ fn drawView(node):
 
   <div class="interactive">
     <div class="prompt">
-      <p>These buttons are crafted from raw pixels!</p>
+      <p>These buttons are handmade from raw pixels!</p>
       <p>
         You can adjust the border radius to test the hit-detection mechanism.
       </p>
@@ -466,21 +471,23 @@ fn drawView(node):
 
   <h2>Alpha Blending</h2>
   <p>
-    Within a view tree, geometries inevitably overlap and obscure each other. If
-    we want to see through a layer, we need to blend it with the underlying
-    layer. To do so, instead of overwriting each pixel when we call
+    Within a view tree, geometries overlap and obscure each other. If for
+    aesthetic reasons we want to see through a layer, we need to blend it with
+    the underlying layer. To do so, instead of overwriting each pixel when we
+    call
     <code>draw(geometry)</code>, we need to calculate a weighted average of the
-    existing \((r_2,g_2,b_2)\) values and the new \((r_1,g_1,b_1)\) values. The
-    weights are determined by each layer's contribution to the
-    <em>alpha</em> channel: $$a = a_1 + a_2 (1-a_1)$$ $$(r,g,b) =
-    \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
+    existing color \((r_2,g_2,b_2)\) of each pixel and the new color
+    \((r_1,g_1,b_1)\) to be painted over it. The weight for each color is
+    determined by its contribution to the <em>alpha</em> channel: $$a = a_1 +
+    a_2 (1-a_1)$$ $$(r,g,b) = \frac{a_1}{a}(r_1,g_1,b_1) +
+    \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
-  <p>This is commonly referred to as the <em>over operator</em>.</p>
+  <p>This is known as the <em>over operator</em>.</p>
 
   <div class="interactive">
     <div class="prompt">
-      <p>Can you identify the stacking order of these layers?</p>
-      <p>Increase the opacity to verify your answer!</p>
+      <p>Are you able to identify the stacking order of these layers?</p>
+      <p>You can increase the opacity to verify your answer!</p>
     </div>
     <canvas id="alpha-compositing"></canvas>
   </div>
@@ -492,8 +499,8 @@ fn drawView(node):
 
   <h2>Filtering</h2>
   <p>
-    If we want to distinguish overlapping transparent layers, we could apply a
-    "frosted glass" post-processing effect. To do so, we need to
+    If we want to clearly distinguish transparent layers, we could apply a
+    blurring post-processing effect. To do so, we need to
     <em>"convolve"</em> the image with a <em>"kernel"</em> &mdash; that sounds
     rather highbrow, but we are really just calculating a weighted average (yes,
     again!) of the neighborhood surrounding each pixel, using the weights given
@@ -505,16 +512,14 @@ fn drawView(node):
     For blurring we usually use (a discrete version of) the 2D Gaussian function
     $$G(x,y) =
     \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right).$$ The
-    result, as you might have guessed, is the
+    result, as you might have guessed, is called
     <em>"Gaussian blur"</em>.
   </p>
 
   <div class="interactive">
     <div class="prompt">
-      <p>
-        Try dragging the lens across the image to see Gaussian blur in action!
-      </p>
-      <p>This is written in JavaScript and executed on the CPU.</p>
+      <p>Drag the lens across the image to see Gaussian blur in action!</p>
+      <p>This blur effect is written in JavaScript and performed on the CPU.</p>
     </div>
     <canvas id="glass"></canvas>
   </div>
@@ -524,19 +529,19 @@ fn drawView(node):
   </div>
   <script type="module" src="./demo/glass.js"></script>
 
-  <h2>Next: Hardware Acceleration</h2>
+  <h2>Hardware Acceleration</h2>
   <p>
-    So far, we have been iterating through all pixels sequentially for every
-    single frame! One glaring problem (among several others) with this naive
-    approach is that it doesn't scale well with higher screen resolutions.
-    Fortunately, for many of the steps above, we can actually process pixels
+    So far, we have been iterating through a lot of pixels for every single
+    frame! One glaring problem (among several others) with this naïve approach
+    is that it doesn't scale well with higher screen resolutions. Fortunately,
+    for many of the steps above, we can actually process pixels
     <em>in parallel</em> &mdash;
   </p>
 
   <div class="interactive">
     <div class="prompt">
-      <p>This text is rendered on the GPU.</p>
-      <p>A different triangulation is applied to the glyphs in each frame.</p>
+      <p>This text is being rendered as triangles on the GPU.</p>
+      <p>In each frame, a different triangulation is performed on the CPU.</p>
     </div>
     <canvas id="gpu"></canvas>
     <script type="module" src="./demo/gpu.js"></script>
