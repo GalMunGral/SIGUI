@@ -368,13 +368,13 @@ fn draw(curve):
 
   <h2>Bézier Curves</h2>
   <p>
-    Interestingly, applying linear interpolation recursively on positions based
-    on the same \(t\) parameter at every level produces the famous
+    Interestingly, applying linear interpolation on positions recursively based
+    on the same \(t\) parameter at every level produces the so-called
     <em>"Bézier curves"</em>.
   </p>
   <p>
     Given control points \(p^{(0)}_0, p^{(0)}_1, \dots p^{(0)}_n\), we could
-    construct a Bézier curve \(B(t)\) iteratively using the
+    sample a Bézier curve \(B(t)\) at \(t\) iteratively using the
     <em>De Casteljau's algorithm</em>:
   </p>
   <blockquote>
@@ -388,7 +388,7 @@ fn draw(curve):
   <div class="interactive">
     <div class="prompt">
       <p>
-        Click on this canvas to place the control points for your Bézier curve!
+        Click on this canvas to place your control points for the Bézier curve.
       </p>
     </div>
 
@@ -432,18 +432,18 @@ fn draw(curve):
   </p>
   <blockquote>
     <pre>
-fn drawView(node):
-  for curve in node.curves:
+fn drawView(parent):
+  for curve in parent.curves:
     draw(curve)
-  for child in node.children:
+  for child in parent.children:
     drawView(child)
 </pre
     >
   </blockquote>
 
   <p>
-    Hit-detection is straightforward if we have recorded the polygons in their
-    draw order. We can simply do a linear search
+    Hit-detection is straightforward if we record the polygons in their draw
+    order. We can simply do a linear search
     <em>backwards</em> for the last drawn &mdash; and therefore topmost &mdash;
     polygon containing the cursor position.
   </p>
@@ -467,16 +467,14 @@ fn drawView(node):
   <p>
     Within a view tree, geometries overlap and obscure each other. If for
     aesthetic reasons we want to see through a layer, we need to blend it with
-    the underlying layer. To do so, instead of overwriting each pixel when we
-    call
-    <code>draw(geometry)</code>, we need to calculate a weighted average of the
-    existing color \((r_2,g_2,b_2)\) of each pixel and the new color
-    \((r_1,g_1,b_1)\) to be painted over it. The weight for each color is
-    determined by its contribution to the <em>alpha</em> channel: $$a = a_1 +
-    a_2 (1-a_1)$$ $$(r,g,b) = \frac{a_1}{a}(r_1,g_1,b_1) +
-    \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
+    the underlying layers. To do so, instead of overwriting each pixel when
+    drawing, we need to calculate a weighted average of the existing color
+    \((r_2,g_2,b_2)\) at each pixel and the new color \((r_1,g_1,b_1)\) to be
+    painted over it. The weight for each of the two colors is determined by its
+    contribution to the <em>alpha</em> channel: $$a = a_1 + a_2 (1-a_1)$$
+    $$(r,g,b) = \frac{a_1}{a}(r_1,g_1,b_1) + \frac{a_2(1-a_1)}{a}(r_2,g_2,b_2)$$
   </p>
-  <p>This is known as the <em>over operator</em>.</p>
+  <p>This is known as the <em>"over operator"</em>.</p>
 
   <div class="interactive">
     <div class="prompt">
@@ -498,17 +496,17 @@ fn drawView(node):
     If we want to clearly distinguish transparent layers, we could apply a
     blurring post-processing effect. To do so, we need to
     <em>"convolve"</em> the image with a <em>"kernel"</em> &mdash; that sounds
-    rather highbrow, but we are really just calculating a weighted average (yes,
-    again!) of the neighborhood surrounding each pixel, using the weights given
-    by a function \(G(u,v)\) called the "kernel": $$C = \sum_{u=-k}^{k}
+    rather highbrow, but it just means a weighted average (again!) of the
+    neighborhood surrounding each pixel. The weights are given by a function
+    \(G(u,v)\) called the "kernel": $$C = \sum_{u=-k}^{k}
     \sum_{v=-k}^{k}G(u,v)$$ $$Output(x,y) = \frac{1}{C}\sum_{u=-k}^{k}
     \sum_{v=-k}^{k} G(u,v) \cdot Input(x-u, y-v).$$
   </p>
   <p>
     For blurring we usually use (a discrete version of) the 2D Gaussian function
     $$G(x,y) =
-    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right).$$ The
-    result, as you might have guessed, is called
+    \frac{1}{2\pi\sigma^2}\exp\left(-\frac{x^2+y^2}{2\sigma^2}\right).$$ This
+    effect is called
     <em>"Gaussian blur"</em>.
   </p>
 
@@ -527,10 +525,10 @@ fn drawView(node):
 
   <h2>Hardware Acceleration</h2>
   <p>
-    So far, we have been iterating through a lot of pixels for every single
-    frame! One glaring problem (among several others) with this naïve approach
-    is that it doesn't scale well with higher screen resolutions. Fortunately,
-    for many of the steps above, we can actually process pixels
+    So far, we've been iterating through a lot of pixels for every single frame!
+    One glaring problem (among several others) with this naïve approach is that
+    it doesn't scale well with higher screen resolutions. Fortunately, for many
+    of the steps above, we can actually process pixels
     <em>in parallel</em> &mdash;
   </p>
 
