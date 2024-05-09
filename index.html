@@ -485,7 +485,9 @@ fn drawView(node):
 
   <div class="interactive">
     <div class="prompt">
-      <p>Are you able to identify the stacking order of these layers?</p>
+      <p>
+        Are you able to identify the stacking order of these transparent layers?
+      </p>
       <p>You can increase the opacity to verify your answer!</p>
     </div>
     <canvas id="alpha-compositing"></canvas>
@@ -518,7 +520,7 @@ fn drawView(node):
   <div class="interactive">
     <div class="prompt">
       <p>Drag the lens across the image to see Gaussian blur in action!</p>
-      <p>This blur effect is written in JavaScript and performed on the CPU.</p>
+      <p>The blur effect is written in JavaScript and performed on the CPU.</p>
     </div>
     <canvas id="glass"></canvas>
   </div>
@@ -540,7 +542,7 @@ fn drawView(node):
   <div class="interactive">
     <div class="prompt">
       <p>This text is being rendered as triangles on the GPU.</p>
-      <p>In each frame, a different triangulation is performed on the CPU.</p>
+      <p>In each frame, a random triangulation is performed on the CPU.</p>
     </div>
     <canvas id="gpu"></canvas>
     <script type="module" src="./demo/gpu.js"></script>
