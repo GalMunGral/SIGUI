@@ -332,11 +332,8 @@ fn draw(curve):
 
   <div class="interactive">
     <div class="prompt">
-      <p>
-        Try writing with your mouse/trackpad here. Can you spot the circles and
-        rectangles?
-      </p>
-      <p>If not, increasing the line width might help.</p>
+      <p>Try writing with your mouse/trackpad on this canvas.</p>
+      <p>Can you spot the circles and rectangles?</p>
     </div>
     <canvas id="curve"></canvas>
   </div>
@@ -349,9 +346,9 @@ fn draw(curve):
   <h2>Color Gradients</h2>
 
   <p>
-    Before we transition (eh?) to text rendering, let's take a brief detour and
-    take a look at color gradients ! Suppose we want the color to change from
-    \(C_1\) to \(C_2\). All we need to do is to
+    Before we transition to text rendering, let's take a brief detour and take a
+    look at color gradients ! Suppose we want the color to change from \(C_1\)
+    to \(C_2\). All we need to do is to
     <em>"linearly interpolate"</em> &mdash; i.e. to calculate a weighted average
     of &mdash; the two colors at each pixel: $$interpolate(C_1, C_2, t) = (1-t)
     \cdot C_1 + t \cdot C_2,$$ where the parameter \(t\) varies with some sort
